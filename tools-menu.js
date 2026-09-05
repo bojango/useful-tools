@@ -22,7 +22,7 @@
     .tools-menu-light .tools-menu-panel{background:#f4f3ef;border-color:#d7d5ce;box-shadow:0 10px 30px rgba(0,0,0,.10)}
     .tools-menu-light .tools-menu-head{border-color:#d7d5ce;color:#797872}
     .tools-menu-light .tools-menu-link{color:#151515;border-color:#e4e2dc;font-weight:600}
-    .tools-menu-light .tools-menu-link:hover,.tools-menu-light .tools-menu-link:focus-visible{background:#fff;color:#151515}
+    .tools-menu-light .tools-menu-link:hover,.tools-menu-light .tools-menu-link:focus-visible{background:#fff;color:#151515;outline:none}
     .tools-menu-light .tools-menu-link[aria-current="page"]{color:#151515;background:#fff}
     .tools-menu-light .tools-menu-status{color:#9b9991}
     @media(max-width:520px){.tools-menu-wrap{right:10px;bottom:10px}.tools-menu-panel{width:min(220px,calc(100vw - 20px))}}
@@ -34,11 +34,12 @@
   const onPalette = /\/palette$/i.test(path);
   const onImages = /\/images$/i.test(path);
   const onTerminal = /\/terminalfx$/i.test(path);
-  const onRoot = !onPassword && !onPalette && !onImages && !onTerminal;
-  const base = (onPassword || onPalette || onImages || onTerminal) ? '..' : '.';
+  const onAdventure = /\/adventure$/i.test(path);
+  const onRoot = !onPassword && !onPalette && !onImages && !onTerminal && !onAdventure;
+  const base = (onPassword || onPalette || onImages || onTerminal || onAdventure) ? '..' : '.';
 
   const wrap = document.createElement('div');
-  wrap.className = `tools-menu-wrap${onPalette ? ' tools-menu-light' : ''}`;
+  wrap.className = `tools-menu-wrap${(onPalette || onAdventure) ? ' tools-menu-light' : ''}`;
   wrap.innerHTML = `
     <div id="toolsMenuPanel" class="tools-menu-panel" aria-hidden="true">
       <div class="tools-menu-head">Tools</div>
@@ -56,6 +57,9 @@
       </a>
       <a class="tools-menu-link" href="${base}/terminalfx/" ${onTerminal ? 'aria-current="page"' : ''}>
         <span>Terminal photo FX</span><span class="tools-menu-status">05</span>
+      </a>
+      <a class="tools-menu-link" href="${base}/adventure/" ${onAdventure ? 'aria-current="page"' : ''}>
+        <span>Adventure awaits</span><span class="tools-menu-status">06</span>
       </a>
     </div>
     <button id="toolsMenuButton" class="tools-menu-btn" type="button" aria-label="Open tools menu" aria-expanded="false" aria-controls="toolsMenuPanel">
