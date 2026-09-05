@@ -1,0 +1,1363 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#070c0b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dough Calculator">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>Dough Calculator</title>
+<style>
+:root{
+  --bg:#070c0b;--panel:#0b1210;--panel2:#08100e;--line:#263a34;--line2:#1f312c;
+  --text:#e6eee9;--muted:#789087;--accent:#8cd7ad;--offwhite:#e7e4d8;
+}
+*{box-sizing:border-box}
+html{background:#000;color-scheme:dark;touch-action:manipulation}
+body{
+  margin:0;padding:10px;min-height:100vh;background:#000;color:var(--text);
+  font-family:Menlo,Consolas,"SFMono-Regular",monospace;-webkit-font-smoothing:antialiased;
+  touch-action:manipulation;overscroll-behavior:none
+}
+button,input,select{font:inherit}
+button{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+#app{width:min(100%,820px);margin:0 auto}
+.shell{border:1px solid var(--line);background:var(--bg);padding:10px}
+.title{border-bottom:1px solid var(--line);padding:3px 2px 11px;font-size:clamp(20px,4vw,28px);font-weight:900;line-height:1;letter-spacing:.06em}
+.label,.tiny{font-size:9px;line-height:1.15;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.bread-label{display:block;margin:11px 0 6px 2px}
+.select-wrap{position:relative}
+.select-wrap:after{content:"▾";position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--accent);pointer-events:none}
+select{appearance:none;-webkit-appearance:none;border-radius:0}
+#bread{
+  width:100%;height:44px;border:1px solid var(--line);background:var(--panel2);color:var(--text);
+  outline:none;padding:0 34px 0 11px;font-size:16px;font-weight:800
+}
+.main{display:grid;gap:9px;margin-top:10px}
+.left,.right{display:grid;align-content:start;gap:9px;min-width:0}
+.panel,.visual,.advanced-details{border:1px solid var(--line);background:var(--panel)}
+.panel-head{min-height:34px;display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid var(--line);padding:7px 11px}
+.inputs{display:grid;grid-template-columns:1fr 1fr;gap:0 12px;padding:5px 10px 7px}
+.field{min-width:0;padding:10px 2px 9px;border-bottom:1px solid var(--line2);background:transparent}
+.field-label{display:block;font-size:9px;line-height:1.2;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.control-row{display:grid;grid-template-columns:24px minmax(0,1fr) 24px;align-items:center;gap:4px;margin-top:5px}
+.step-btn{
+  width:24px;height:28px;border:0;background:transparent;color:#668078;
+  font-size:14px;font-weight:500;line-height:1;padding:0;opacity:.78
+}
+.step-btn:active{color:var(--accent);opacity:1}
+.value-row{display:flex;align-items:baseline;justify-content:center;gap:6px;min-width:0}
+.value-row input{
+  width:100%;min-width:0;border:0;outline:0;background:transparent;color:var(--text);
+  padding:0;text-align:center;font-size:20px;font-weight:900
+}
+.unit{font-size:9px;color:var(--muted);text-transform:uppercase}
+.field-select{position:relative;margin-top:6px}
+.field-select:after{content:"▾";position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--accent);pointer-events:none}
+.field-select select{width:100%;min-height:34px;border:0;outline:0;background:transparent;color:var(--text);padding:0 20px;font-size:16px;font-weight:800;text-align:center;text-align-last:center}
+
+summary{
+  list-style:none;cursor:pointer;min-height:43px;display:flex;align-items:center;justify-content:space-between;
+  padding:8px 11px;font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent
+}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font-size:17px;color:var(--accent)}
+details[open]>summary::after{content:"−"}
+
+.advanced-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px;border-top:1px solid var(--line);padding:4px 10px 7px}
+.adv-field{min-width:0;padding:9px 2px;border-bottom:1px solid var(--line2)}
+.adv-field .control-row{grid-template-columns:22px minmax(0,1fr) 22px;margin-top:4px}
+.adv-field .step-btn{width:22px;height:26px;font-size:13px}
+.adv-field .value-row input{font-size:16px}
+.adv-field select{
+  width:100%;min-height:34px;margin-top:4px;border:0;outline:0;background:transparent;color:var(--text);
+  padding:0;font-size:16px;font-weight:800
+}
+.switch-line{display:flex;min-height:34px;align-items:center;justify-content:space-between;gap:8px}
+.toggle{position:relative;width:36px;height:20px;flex:0 0 auto}
+.toggle input{position:absolute;opacity:0}
+.track{position:absolute;inset:0;border:1px solid var(--line);background:var(--panel2)}
+.track:before{content:"";position:absolute;width:12px;height:12px;left:3px;top:3px;background:var(--muted);transition:.15s}
+.toggle input:checked+.track:before{transform:translateX(16px);background:var(--accent)}
+.estimate-note{grid-column:1/-1;padding:6px 2px 2px;font-size:8px;line-height:1.4;color:var(--muted)}
+
+.calc{min-height:44px;width:100%;border:1px solid var(--accent);background:var(--accent);color:var(--bg);padding:10px 14px;font-size:12px;font-weight:900;letter-spacing:.14em;text-transform:uppercase}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.save-wide{grid-column:1/-1}
+.secondary{min-height:39px;border:1px solid var(--line);background:transparent;color:var(--text);padding:8px 10px;font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.sharing-panel{display:grid;gap:8px;border-top:1px solid var(--line);padding:8px}
+.wake-setting{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);background:var(--panel2);padding:9px 10px}
+.wake-help{margin-top:3px;font-size:8px;line-height:1.3;color:var(--muted)}
+.saved-details{border:1px solid var(--line);background:var(--panel)}
+.saved-list{border-top:1px solid var(--line)}
+.saved-empty{padding:9px 11px;font-size:9px;color:var(--muted)}
+.saved-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;align-items:center;gap:5px;min-height:40px;padding:6px 9px;border-bottom:1px solid var(--line2)}
+.saved-row:last-child{border-bottom:0}
+.saved-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:800}
+.saved-btn{min-height:29px;border:0;background:transparent;color:var(--accent);padding:4px 6px;font-size:8px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.saved-btn.delete{color:var(--muted)}
+.status{min-height:15px;text-align:center;font-size:8px;color:var(--accent)}
+.modified-badge{font-size:8px;letter-spacing:.1em;color:var(--accent);white-space:nowrap}
+.result-sub{margin-top:2px;font-size:7px;font-weight:500;line-height:1.2;color:var(--muted)}
+
+.result-row{display:grid;grid-template-columns:minmax(0,1fr) 52px 82px;align-items:center;gap:7px;min-height:34px;border-bottom:1px solid #1b2b26;padding:5px 11px}
+.result-row:last-child{border-bottom:0}
+.result-name{font-size:12px;font-weight:800;min-width:0}
+.result-pct{justify-self:start;border:1px solid var(--line);padding:2px 4px;font-size:8px;color:var(--muted);white-space:nowrap}
+.result-mass{text-align:right;font-size:16px;font-weight:900;white-space:nowrap}
+.group{border-bottom:1px solid #1b2b26;background:var(--panel2);padding:5px 11px;font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.yield-line{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:6px 11px;border-bottom:1px solid var(--line);font-size:8px;line-height:1.35;color:var(--muted)}
+.note{border-top:1px solid var(--line);padding:6px 11px;font-size:8px;line-height:1.4;color:var(--muted)}
+.method{border:1px solid var(--line);background:var(--panel)}
+.method summary{color:var(--accent)}
+.method-list{margin:0;border-top:1px solid var(--line);padding:8px 12px 9px 27px;font-size:10px;line-height:1.45;color:#c9d5cf}
+.method-list li{margin-bottom:4px}
+.visual{position:relative;overflow:hidden;min-height:98px;padding:9px 10px}
+.visual-head{display:flex;justify-content:space-between;gap:8px;position:relative;z-index:2}
+.stage{min-height:70px;display:flex;align-items:center;justify-content:center;padding:5px 0 0;opacity:.26;transform:scale(1.22);transform-origin:center}
+.foot{padding-top:5px;text-align:center;font-size:8px;color:var(--muted)}
+.hidden{display:none!important}
+
+/* profiles */
+.ball{width:17px;height:17px;border-radius:999px;background:var(--offwhite)}
+.bun{width:22px;height:16px;border-radius:999px;background:var(--offwhite)}
+.roll{position:relative;width:24px;height:21px;border-radius:999px;background:var(--offwhite)}
+.roll:after{content:"";position:absolute;width:12px;height:10px;left:6px;top:4px;border:2px solid var(--bg);border-left-color:transparent;border-radius:50%;transform:rotate(-25deg)}
+.yorkie{position:relative;width:24px;height:18px;background:var(--offwhite);border-radius:5px 5px 10px 10px;transform:perspective(30px) rotateX(-4deg)}
+.yorkie:after{content:"";position:absolute;left:5px;right:5px;top:3px;height:7px;border-radius:50%;background:var(--bg);opacity:.78}
+.pancake{width:27px;height:8px;border-radius:50%;background:var(--offwhite)}
+.crepe{width:30px;height:4px;border-radius:50%;background:var(--offwhite)}
+.pita{position:relative;width:48px;height:28px;border-radius:50%;background:var(--offwhite)}
+.pita:after{content:"";position:absolute;left:8px;right:8px;top:50%;height:1px;background:var(--bg);opacity:.35}
+.naan{position:relative;width:48px;height:30px;background:var(--offwhite);border-radius:58% 42% 52% 48% / 62% 48% 52% 38%;transform:rotate(-7deg)}
+.naan:after{content:"";position:absolute;width:5px;height:3px;border-radius:50%;background:var(--bg);left:12px;top:8px;box-shadow:16px 7px 0 var(--bg),7px 14px 0 var(--bg);opacity:.45}
+.value-row input:disabled{color:var(--muted);opacity:.72}
+.step-btn:disabled{opacity:.18;pointer-events:none}
+.foc{position:relative;width:112px;height:41px;border-radius:5px;background:var(--offwhite)}
+.foc i{position:absolute;width:6px;height:6px;border-radius:50%;background:var(--bg)}
+.foc i:nth-child(1){left:18px;top:10px}.foc i:nth-child(2){left:42px;top:24px}.foc i:nth-child(3){left:68px;top:11px}.foc i:nth-child(4){left:91px;top:23px}
+.sd{position:relative;width:106px;height:54px;border-radius:50%;background:var(--offwhite)}
+.sd:after{content:"";position:absolute;width:58px;height:3px;left:24px;top:25px;background:var(--bg);transform:rotate(-17deg)}
+.slice{position:relative;width:72px;height:58px;background:var(--offwhite);border-radius:31px 31px 7px 7px}
+.slice:before,.slice:after{content:"";position:absolute;top:-4px;width:40px;height:26px;background:var(--offwhite);border-radius:55% 55% 35% 35%}
+.slice:before{left:1px}.slice:after{right:1px}
+.milkicon{display:flex;align-items:flex-end;gap:4px;height:59px}
+.milkicon span{width:30px;height:48px;background:var(--offwhite);border-radius:19px 19px 5px 5px}
+.pairs{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:center;gap:15px}
+.pair{display:flex;flex-direction:column;align-items:center;gap:7px}
+
+input:focus,select:focus,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media(min-width:680px){
+  .main{grid-template-columns:1fr 1fr;gap:11px}.shell{padding:12px}
+  .advanced-grid{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:390px){
+  body{padding:7px}.shell{padding:8px}
+  .result-row{grid-template-columns:minmax(0,1fr) 47px 72px;padding-left:8px;padding-right:8px}
+  .result-mass{font-size:15px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="shell">
+    <div class="title">DOUGH CALCULATOR</div>
+
+    <label class="label bread-label" for="bread">Bread type</label>
+    <div class="select-wrap">
+      <select id="bread">
+        <option value="pizza">Pizza</option>
+        <option value="focaccia">Focaccia</option>
+        <option value="khubz">Lebanese Khubz / Pita</option>
+        <option value="naan">Naan</option>
+        <option value="yorkshire">Yorkshire puddings</option>
+        <option value="pancakes">Pancakes</option>
+        <option value="crepes">Crêpes</option>
+        <option value="sandwich">White sandwich loaf</option>
+        <option value="sourdough">Sourdough loaf</option>
+        <option value="milk">Japanese milk bread</option>
+        <option value="brioche">Brioche</option>
+        <option value="cinnamon">Cinnamon buns</option>
+      </select>
+    </div>
+
+    <div class="main">
+      <div class="left">
+        <section class="panel">
+          <div class="panel-head"><span class="label">Primary inputs</span><span id="modifiedBadge" class="modified-badge hidden">• MODIFIED</span></div>
+          <div id="inputs" class="inputs"></div>
+        </section>
+
+        <details id="advancedDetails" class="advanced-details">
+          <summary>Advanced settings</summary>
+          <div id="advancedGrid" class="advanced-grid"></div>
+        </details>
+
+        <button id="calc" class="calc" type="button">Calculate dough</button>
+
+      </div>
+
+      <div class="right">
+        <section class="panel" aria-live="polite">
+          <div class="panel-head">
+            <span class="label">Ingredient output</span>
+            <span id="total" class="label" style="color:var(--accent)"></span>
+          </div>
+          <div id="yieldLine" class="yield-line"></div>
+          <div id="rows"></div>
+          <div id="note" class="note"></div>
+        </section>
+
+        <details id="method" class="method">
+          <summary>Method</summary>
+          <ul id="methodList" class="method-list"></ul>
+        </details>
+
+        <section class="visual">
+          <div class="visual-head">
+            <span id="visualTitle" class="label"></span>
+            <span id="visualLabel" class="tiny"></span>
+          </div>
+          <div id="stage" class="stage"></div>
+        </section>
+
+        <details id="sharingDetails" class="advanced-details">
+          <summary>Sharing / Saved</summary>
+          <div class="sharing-panel">
+            <div class="actions">
+              <button id="saveRecipe" class="secondary save-wide" type="button">Save recipe</button>
+              <button id="reset" class="secondary" type="button">Reset preset</button>
+              <button id="copyRecipe" class="secondary" type="button">Copy recipe</button>
+              <button id="exportRecipes" class="secondary" type="button">Export saved</button>
+              <button id="importRecipes" class="secondary" type="button">Import saved</button>
+              <input id="importFile" class="hidden" type="file" accept="application/json,.json">
+            </div>
+            <div class="wake-setting">
+              <div>
+                <span class="field-label">Keep screen awake</span>
+                <div class="wake-help">While calculator is onscreen</div>
+              </div>
+              <label class="toggle"><input id="wakeOn" type="checkbox"><span class="track"></span></label>
+            </div>
+            <details id="savedDetails" class="saved-details">
+              <summary>Saved recipes</summary>
+              <div id="savedList" class="saved-list"></div>
+            </details>
+            <div id="status" class="status"></div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div id="foot" class="foot"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const root = document.getElementById('app');
+  if (!root || root.dataset.ready) return;
+  root.dataset.ready = '1';
+
+  const $ = s => root.querySelector(s);
+  const names = { idy:'IDY', ady:'Active dry yeast', fresh:'Fresh yeast', starter:'Sourdough starter' };
+  const SAVE_KEY = 'dough-calculator-saved-recipes-v1';
+  const DEFAULT_KEY = 'dough-calculator-default-recipes-v1';
+  const STATE_KEY = 'dough-calculator-last-state-v1';
+  const WAKE_KEY = 'dough-calculator-screen-awake-v1';
+
+  const recipes = {
+    pizza:{
+      mode:'balls',hyd:65,salt:2.5,oil:true,oilPct:2,types:['idy','ady','fresh','starter'],def:'idy',starter:20,
+      yeastPct:{idy:.10,ady:.125,fresh:.30},ferment:{hours:24,temp:4},
+      desc:'Lean pizza dough. Advanced settings can tune salt, oil and fermentation-aware yeast.',
+      method:['Knead 5–7 min until smooth.','Ferment until puffy.','Divide into the selected number of balls.','Rest balls before stretching.','Top and bake as hot as your oven allows.']
+    },
+    focaccia:{
+      mode:'flour',flour:360,hyd:78.9,salt:2.5,types:['idy','ady','fresh'],def:'idy',
+      yeastPct:{idy:.833,ady:1.04,fresh:2.50},ferment:{hours:3.5,temp:27},
+      desc:'Big-and-bubbly focaccia: high hydration, a little sugar, and olive oil in the dough and pan.',
+      method:['Mix flour, salt, sugar and yeast.','Add water + dough olive oil; mix until homogeneous.','Rest 15 min.','Do 3–4 bowl-fold sets, 15 min apart.','Ferment until airy and bubbly.','Oil pan; transfer dough and gently stretch.','Proof until puffy; dimple; add topping oil + flaky salt.','Bake at 220–230°C until deeply golden.']
+    },
+    khubz:{
+      mode:'flatbread',qty:8,flour:500,flourPer:62.5,hyd:64,salt:2,sugar:2,oilPct:3,types:['idy','ady','fresh'],def:'idy',
+      yeastPct:{idy:1.4,ady:1.75,fresh:4.2},
+      desc:'Lebanese khubz / pita: soft, thin, pocket-forming flatbreads. Base recipe makes 8 from 500 g strong white flour, 320 ml water, 7 g IDY, 10 g salt, 10 g sugar and 15 g olive oil. High heat and even rolling are critical for the pocket.',
+      method:['Mix flour, yeast, sugar and salt. Add the warm water + olive oil and mix to a rough dough.','Knead 8–10 min until smooth, elastic and slightly tacky. Add extra flour only if absolutely necessary.','Cover and rise somewhere warm for 60–90 min, until roughly doubled.','Knock the air out gently; divide into the selected number of equal pieces and shape into balls.','Cover and rest 20 min so the dough relaxes.','Put a pizza stone, baking steel or heavy upside-down tray in the oven. Heat to 250°C / 230°C fan, or as hot as the oven will reliably go, for at least 30 min.','Roll each ball to about 18–20 cm wide and around 3 mm thick. Keep the thickness even and keep waiting dough covered.','Bake one or two breads directly on the very hot surface for roughly 2–3 min, until they balloon. Flip for another 30–60 sec only if necessary; do not overbake.','Stack the cooked breads immediately inside a clean tea towel so trapped steam keeps them soft and flexible.']
+    },
+    naan:{
+      mode:'naan',qty:6,flour:300,waterMl:125,yogurtMl:150,butter:25,sugarTsp:2,bakingPowderTsp:.5,saltTsp:.5,nigellaTbsp:1,types:['ady','idy','fresh'],def:'ady',
+      yeastPct:{ady:2.3333333333,idy:1.8666666667,fresh:5.6},
+      desc:'Good Food-style naan, scaled from the six-ball method: 300 g strong white flour, 125 ml warm water, 150 ml natural yogurt, 25 g butter or ghee, 7 g dried yeast, sugar, baking powder, salt and nigella seeds.',
+      method:['Prepare the yeast with the warm water and some of the sugar if needed for the yeast type.','Combine flour, remaining sugar, salt and baking powder. Add yogurt, melted butter or ghee, nigella seeds and the water/yeast mixture; bring together into a very soft dough.','Knead for about 10 min until smooth and elastic, keeping the dough soft.','Place in a buttered bowl, cover and leave warm for about 1 hr, until doubled.','Divide into the selected number of balls and keep covered.','Heat a large non-stick frying pan over high heat.','Roll each ball into a teardrop roughly 21 cm long and 13 cm at its widest point.','Dry-fry in the very hot pan for about 3 min until puffed, then turn and cook for another 3–4 min until cooked and charred in patches.','Brush cooked naans with melted butter or ghee, cover and keep warm while cooking the rest.']
+    },
+    yorkshire:{
+      mode:'yorkshire',flour:150,qty:12,flourPer:12.5,milkPct:120,eggPct:100,oilMlPer:3.75,
+      desc:'Standard muffin-tin Yorkshire puddings. Scaling basis: 4 medium puddings = 50 g plain flour, 1 large egg, 60 ml milk and 1 tbsp sunflower oil.',
+      method:['Heat oven to 230°C / 210°C fan.','Divide the sunflower or vegetable oil between the selected muffin-tin holes.','Heat the tin in the oven until the oil is very hot.','Whisk the plain flour and eggs until smooth.','Gradually whisk in the milk until completely lump-free; season with salt and pepper.','Rest the batter for at least 15 min if time allows, then give it a quick whisk.','Working quickly, divide the batter evenly between the hot muffin-tin holes.','Bake undisturbed for 20–25 min until well risen, crisp and browned. Do not open the oven door during baking.']
+    },
+    pancakes:{
+      mode:'pancake',flour:180,qty:12,flourPer:15,
+      desc:'Fluffy American-style pancakes, scaled from a standard 12-pancake recipe. Default size is about 4½ in / 11.5 cm each.',
+      method:['Whisk the eggs and milk until light and foamy, then stir in the melted butter or vegetable oil.','Whisk flour, sugar, baking powder and salt together separately.','Gently mix the dry ingredients into the wet just until combined; a few small lumps are fine.','Rest the batter for about 15 min while the pan heats.','Heat a lightly greased heavy frying pan over medium heat.','Use about 60 ml / ¼ cup batter per pancake to make roughly 11.5 cm pancakes.','Cook until bubbles form and break on top, about 2 min; flip once and cook the second side for 1½–2 min.','Serve immediately or keep warm while cooking the remaining pancakes.']
+    },
+    crepes:{
+      mode:'crepe',flour:100,qty:12,flourPer:8.3333333333,
+      desc:'Thin 18 cm crêpes, scaled from a standard 12-crêpe recipe using a roughly 18 cm frying pan.',
+      method:['Put the plain flour, eggs, milk, oil and a pinch of salt into a bowl or jug.','Whisk until completely smooth and the batter is similar to single cream.','Rest for around 30 min if time allows, then whisk briefly again.','Heat an 18 cm frying pan over medium heat and wipe it with a very thin film of oil.','Pour in just enough batter to coat the base, swirling immediately to form a thin crêpe.','Cook until the underside is lightly golden and the edges release, then flip.','Cook the second side briefly until lightly coloured.','Stack and keep warm while cooking the remaining crêpes.']
+    },
+    sandwich:{
+      mode:'flour',flour:500,hyd:64,salt:2,types:['idy','ady','fresh'],def:'idy',
+      yeastPct:{idy:1.4,ady:1.75,fresh:4.2},
+      desc:'Soft white loaf sized for one 900 g / 2 lb loaf tin: 500 g flour, 320 g whole milk, 7 g IDY, 10 g salt, 25 g sugar or honey and 35 g butter.',
+      method:['Warm the whole milk until lukewarm.','Mix flour, salt and sugar or honey.','Add milk + yeast; mix into a dough.','Knead 6–8 min.','Add softened butter; knead until smooth and elastic.','Cover and rise until roughly doubled, about 1 hr.','Shape and place in a greased 900 g / 2 lb loaf tin.','Proof until well risen above the tin.','Bake at 190°C / 170°C fan for 30–35 min; cool on a rack.']
+    },
+    sourdough:{
+      mode:'flour',flour:500,hyd:75,salt:2,types:['starter'],def:'starter',starter:20,
+      desc:'Lean sourdough: 75% total hydration, 20% active 100%-hydration starter.',
+      method:['Mix flour + most water; rest 30 min.','Add active starter + salt.','Do 4 stretch-and-fold sets, 30 min apart.','Bulk ferment until airy and 50–75% larger.','Pre-shape; rest 20 min.','Final shape; place in banneton.','Cold proof 8–16 hr.','Score; bake 250°C covered 20 min, then 230°C uncovered 20–25 min.']
+    },
+    milk:{
+      mode:'milk',flour:314,hyd:63.4,types:['idy','ady','fresh'],def:'idy',
+      yeastPct:{idy:2.87,ady:3.59,fresh:8.61},
+      desc:'Hokkaido-style milk bread using tangzhong, milk, egg, dry milk, sugar and butter.',
+      method:['Tangzhong: whisk its flour, water + milk.','Cook 3–5 min until thick; cool.','Add remaining bread flour, whole milk, dry milk, sugar, salt, yeast, egg + butter.','Knead 10–15 min until elastic.','Rise 60–90 min until puffy.','Divide into 4; flatten, fold and roll into logs.','Place side-by-side in loaf tin; proof 40–50 min.','Bake at 175°C for 30–35 min.']
+    },
+    brioche:{
+      mode:'flour',flour:500,hyd:59,salt:2.5,types:['fresh','idy','ady'],def:'fresh',
+      yeastPct:{fresh:7,idy:2.33,ady:2.91},
+      desc:'Classic rich brioche: about 50% egg, 50% butter, 12% sugar and 9% water.',
+      method:['Mix flour, egg, water, sugar, salt + yeast.','Knead until strong and elastic.','Add butter gradually, fully mixing each addition.','Mix until glossy and able to stretch thin.','Rest 1 hr; fold once.','Chill overnight.','Shape buns or loaf; proof until very puffy.','Bake at 190°C until deep golden.']
+    },
+    cinnamon:{
+      mode:'rolls',rolls:8,types:['idy','ady','fresh'],def:'idy',
+      yeastPct:{idy:1.85,ady:2.31,fresh:5.56},
+      desc:'Pillowy tangzhong cinnamon buns with brown-sugar cinnamon filling. Icing omitted.',
+      method:['Tangzhong: cook its milk + flour until thick; cool.','Add dough milk, flour, salt, sugar, yeast + butter.','Knead until smooth and elastic.','Rise until puffy.','Mix filling butter, brown sugar, flour, cinnamon + salt.','Press dough into a rectangle; spread filling.','Roll into a log; cut the selected number of buns.','Proof until puffy.','Bake at 190°C for 14–18 min.']
+    }
+  };
+
+  let lastResult = { title:'', lines:[], yield:'' };
+
+  const fmt = v => {
+    if (!Number.isFinite(v) || v < 0) v = 0;
+    if (v >= 100) return String(Math.round(v));
+    if (v >= 10) return v.toFixed(1).replace(/\.0$/,'');
+    return v.toFixed(2).replace(/0+$/,'').replace(/\.$/,'');
+  };
+  const pct = v => `${Math.round(v*100)/100}%`;
+  const recipe = () => recipes[$('#bread').value];
+
+  function read(id, fallback, min, max) {
+    const el = $('#' + id);
+    let v = parseFloat(el?.value);
+    if (!Number.isFinite(v)) v = fallback;
+    if (min != null) v = Math.max(min,v);
+    if (max != null) v = Math.min(max,v);
+    return v;
+  }
+
+  function stepField(id,label,value,unit,step,min,max,advanced=false) {
+    const wrap = advanced ? 'adv-field' : 'field';
+    return `<label class="${wrap}">
+      <span class="field-label">${label}</span>
+      <span class="control-row">
+        <button class="step-btn" type="button" data-step-target="${id}" data-delta="-${step}" aria-label="Decrease ${label}">−</button>
+        <span class="value-row"><input id="${id}" type="number" value="${value}" step="${step}" min="${min}" max="${max}"><span class="unit">${unit}</span></span>
+        <button class="step-btn" type="button" data-step-target="${id}" data-delta="${step}" aria-label="Increase ${label}">+</button>
+      </span>
+    </label>`;
+  }
+
+  function selectField(id,label,options,advanced=false) {
+    const wrap = advanced ? 'adv-field' : 'field';
+    return `<label class="${wrap}">
+      <span class="field-label">${label}</span>
+      <span class="${advanced?'':'field-select'}"><select id="${id}">${options}</select></span>
+    </label>`;
+  }
+
+  function typeOptions(r) {
+    return r.types.map(t => `<option value="${t}" ${t===r.def?'selected':''}>${names[t]}</option>`).join('');
+  }
+
+  function bindStepButtons(scope=root) {
+    scope.querySelectorAll('[data-step-target]').forEach(btn => {
+      btn.addEventListener('click', ev => {
+        ev.preventDefault();
+        const target = $('#' + btn.dataset.stepTarget);
+        if (!target) return;
+        const delta = parseFloat(btn.dataset.delta);
+        const min = target.min !== '' ? parseFloat(target.min) : -Infinity;
+        const max = target.max !== '' ? parseFloat(target.max) : Infinity;
+        const current = parseFloat(target.value) || 0;
+        const next = Math.min(max, Math.max(min, current + delta));
+        target.value = Math.round(next*100)/100;
+        if (['yorkshire','pancake','crepe'].includes(recipe().mode) && ['yorkQty','flour'].includes(target.id)) syncYorkshireBasisUI();
+        else if (['balls','weight','rolls','khubzQty','naanQty'].includes(target.id)) renderIcon();
+        updateModifiedBadge();
+        saveLastState();
+      }, {passive:false});
+    });
+  }
+
+  function commercialYeastPct(r,type) {
+    const manual = read('yeastPct', r.yeastPct?.[type] || .1, .001, 15);
+    if ($('#yeastCalc')?.value !== 'ferment' || !(r.mode==='balls' || $('#bread').value==='focaccia')) return manual;
+
+    const hours = read('fermentHours', r.ferment?.hours || 24, 1, 120);
+    const tempC = read('fermentTemp', r.ferment?.temp || 4, 1, 35);
+    let idy = 0.4 * (24 / hours) * Math.pow(2, (4 - tempC) / 10);
+    if ($('#bread').value === 'focaccia') idy *= 1.8;
+    idy = Math.max(.02, Math.min(2.5, idy));
+    if (type === 'ady') return idy * 1.25;
+    if (type === 'fresh') return idy * 3;
+    return idy;
+  }
+
+  function eggNote(grams) {
+    const raw=grams/50;
+    const count=raw<1?Math.round(raw*100)/100:Math.round(raw*2)/2;
+    const shown=Number.isInteger(count)?String(count):String(count);
+    return `~${shown} large egg${count===1?'':'s'}`;
+  }
+
+  function addRow(name,p,m,sub='',unit='g') {
+    $('#rows').insertAdjacentHTML('beforeend', `<div class="result-row">
+      <div class="result-name">${name}</div><div class="result-pct">${p}</div><div class="result-mass">${fmt(m)} ${unit}${sub?`<div class="result-sub">${sub}</div>`:''}</div>
+    </div>`);
+    lastResult.lines.push(`${name}: ${fmt(m)} ${unit}${p && p!=='—' ? ` (${p})` : ''}${sub?` [${sub}]`:''}`);
+  }
+
+  function addTextRow(name,p,text,sub='') {
+    $('#rows').insertAdjacentHTML('beforeend', `<div class="result-row">
+      <div class="result-name">${name}</div><div class="result-pct">${p}</div><div class="result-mass">${text}${sub?`<div class="result-sub">${sub}</div>`:''}</div>
+    </div>`);
+    lastResult.lines.push(`${name}: ${text}${sub?` [${sub}]`:''}`);
+  }
+
+  function group(text) {
+    $('#rows').insertAdjacentHTML('beforeend', `<div class="group">${text}</div>`);
+    lastResult.lines.push(`\n${text.toUpperCase()}`);
+  }
+
+  function syncYorkshireBasisUI() {
+    if (!['yorkshire','pancake','crepe'].includes(recipe().mode)) return;
+    const basis=$('#yorkBasis')?.value||'qty';
+    const qty=$('#yorkQty'), flour=$('#flour');
+    if(!qty||!flour) return;
+    if(basis==='qty') flour.value=Math.round((read('yorkQty',recipe().qty,1,60)*recipe().flourPer)*100)/100;
+    else qty.value=Math.round((read('flour',recipe().flour,1,5000)/recipe().flourPer)*10)/10;
+    qty.disabled=basis!=='qty';
+    flour.disabled=basis!=='flour';
+    root.querySelectorAll('[data-step-target="yorkQty"]').forEach(b=>b.disabled=basis!=='qty');
+    root.querySelectorAll('[data-step-target="flour"]').forEach(b=>b.disabled=basis!=='flour');
+    renderIcon();
+  }
+
+  function renderInputs() {
+    const r = recipe();
+    const key = $('#bread').value;
+    let h = '';
+    const portionMode=['yorkshire','pancake','crepe'].includes(r.mode);
+    $('#advancedDetails').classList.toggle('hidden', portionMode);
+    $('#calc').textContent=portionMode?'Calculate batter':'Calculate dough';
+    if (portionMode) {
+      const portionLabel=r.mode==='yorkshire'?'Yorkshire puddings':r.mode==='pancake'?'Pancakes':'Crêpes';
+      h += selectField('yorkBasis','Scale by','<option value="qty">Quantity</option><option value="flour">Flour weight</option>');
+      h += stepField('yorkQty',portionLabel,r.qty,'qty',1,1,60);
+      h += stepField('flour','Flour basis',r.flour,'g',r.flourPer,1,5000);
+    } else if (r.mode === 'balls') {
+      h += stepField('balls','Dough balls',3,'qty',1,1,50);
+      h += stepField('weight','Ball size',310,'g',5,50,1000);
+      h += stepField('hyd','Hydration',r.hyd,'%',1,40,100);
+    } else if (r.mode === 'flatbread') {
+      h += stepField('khubzQty','Khubz breads',r.qty,'qty',1,1,50);
+    } else if (r.mode === 'naan') {
+      h += stepField('naanQty','Naans',r.qty,'qty',1,1,50);
+    } else if (r.mode === 'rolls') {
+      h += stepField('rolls','Cinnamon rolls',r.rolls,'qty',1,1,50);
+    } else {
+      h += stepField('flour','Flour basis',r.flour,'g',25,100,5000);
+      h += stepField('hyd',r.mode==='milk'?'Milk + water':'Hydration',r.hyd,'%',1,20,100);
+    }
+    if (r.types?.length) h += selectField('type','Yeast type',typeOptions(r));
+    $('#inputs').innerHTML = h;
+    if ($('#type')) {
+      $('#type').disabled = r.types.length === 1;
+      $('#type').addEventListener('change', () => {
+        renderAdvanced();
+        renderMethod();
+        calculate();
+      });
+    }
+    bindStepButtons($('#inputs'));
+
+    if(portionMode){
+      syncYorkshireBasisUI();
+      $('#yorkBasis').addEventListener('change',()=>{syncYorkshireBasisUI();updateModifiedBadge();saveLastState();});
+      $('#yorkQty').addEventListener('input',()=>{syncYorkshireBasisUI();updateModifiedBadge();scheduleStateSave();});
+      $('#flour').addEventListener('input',()=>{syncYorkshireBasisUI();updateModifiedBadge();scheduleStateSave();});
+    }
+  }
+
+  function renderAdvanced() {
+    const r = recipe();
+    if (['yorkshire','pancake','crepe'].includes(r.mode)) { $('#advancedGrid').innerHTML=''; return; }
+    const type = $('#type')?.value || r.def;
+    let h = '';
+
+    if (r.mode !== 'rolls' && r.mode !== 'milk' && r.mode !== 'naan') {
+      h += stepField('salt','Salt',r.salt,'%',.1,0,10,true);
+    }
+
+    if (type === 'starter') {
+      h += stepField('starter','Starter',r.starter || 20,'%',1,1,100,true);
+      h += stepField('starterHyd','Starter hydration',100,'%',1,25,250,true);
+    } else {
+      const recipePct = r.yeastPct?.[type] || .1;
+
+      if (r.mode==='balls' || $('#bread').value==='focaccia') {
+        h += selectField('yeastCalc','Yeast calculation',
+          `<option value="recipe">Recipe %</option><option value="ferment">Fermentation estimate</option>`,true);
+      }
+
+      h += stepField('yeastPct','Yeast',recipePct,'%',.01,.001,15,true);
+
+      if (r.mode==='balls' || $('#bread').value==='focaccia') {
+        h += `<div id="fermentFields" class="hidden" style="display:contents">
+          ${stepField('fermentHours','Fermentation',r.ferment?.hours||24,'hr',1,1,120,true)}
+          ${stepField('fermentTemp','Temperature',r.ferment?.temp||4,'°C',1,1,35,true)}
+          <div class="estimate-note">Fermentation yeast is an estimated starting point. Dough temperature, flour and fridge performance still matter.</div>
+        </div>`;
+      }
+    }
+
+    if (r.oil) {
+      h += `<div class="adv-field">
+        <div class="switch-line"><span class="field-label">Olive oil</span>
+          <label class="toggle"><input id="oilOn" type="checkbox"><span class="track"></span></label>
+        </div>
+      </div>`;
+      h += `<div id="oilField" class="hidden">${stepField('oil','Oil',r.oilPct||2,'%',.1,0,20,true)}</div>`;
+    }
+
+    $('#advancedGrid').innerHTML = h;
+    bindStepButtons($('#advancedGrid'));
+
+    $('#yeastCalc')?.addEventListener('change', () => {
+      $('#fermentFields')?.classList.toggle('hidden', $('#yeastCalc').value !== 'ferment');
+      renderMethod();
+      calculate();
+    });
+
+    ['yeastPct','fermentHours','fermentTemp','salt','starter','starterHyd','oil'].forEach(id => {
+      $('#' + id)?.addEventListener('change', () => {
+        renderMethod();
+        calculate();
+      });
+    });
+
+    $('#oilOn')?.addEventListener('change', () => {
+      $('#oilField')?.classList.toggle('hidden', !$('#oilOn').checked);
+      renderMethod();
+      calculate();
+    });
+  }
+
+  function resetPreset() {
+    $('#advancedDetails').open = false;
+    $('#method').open = false;
+    $('#status').textContent = '';
+    renderInputs();
+    renderAdvanced();
+    calculate();
+    renderSavedRecipes();
+  }
+
+  function renderMethod() {
+    const r = recipe();
+    const key = $('#bread').value;
+    const type = $('#type')?.value || r.def;
+    let steps = [];
+
+    if (key === 'pizza') {
+      const oilOn = !!$('#oilOn')?.checked;
+      if (type === 'starter') {
+        steps.push('Mix flour + water; add active starter + salt.');
+      } else if (type === 'ady') {
+        steps.push('Bloom active dry yeast in a little warm recipe water for 10 min.');
+        steps.push('Mix flour, remaining water + salt; add bloomed yeast.');
+      } else if (type === 'fresh') {
+        steps.push('Crumble fresh yeast into a little recipe water.');
+        steps.push('Mix flour, remaining water + salt; add yeast mixture.');
+      } else {
+        steps.push('Mix flour, water, salt + instant yeast.');
+      }
+      if (oilOn) steps.push('Add olive oil once the dough comes together.');
+      steps.push('Knead 5–7 min until smooth.');
+
+      if (type !== 'starter' && $('#yeastCalc')?.value === 'ferment') {
+        const hrs = read('fermentHours', r.ferment.hours, 1, 120);
+        const temp = read('fermentTemp', r.ferment.temp, 1, 35);
+        steps.push(`${temp <= 8 ? 'Cold ferment' : 'Ferment'} about ${fmt(hrs)} hr at ~${fmt(temp)}°C.`);
+        if (temp <= 8) steps.push('Bring dough towards room temperature for 1–2 hr before baking.');
+      } else {
+        steps.push('Cover and ferment until puffy.');
+      }
+      steps.push('Divide into the selected number of balls.');
+      steps.push('Rest balls before stretching.');
+      steps.push('Top and bake as hot as your oven allows.');
+    } else if (key === 'naan') {
+      if (type === 'ady') steps.push('Stir the active dry yeast and half the sugar into the warm water; leave 10–15 min until frothy.');
+      else if (type === 'fresh') steps.push('Crumble the fresh yeast into the warm water with half the sugar; stir until dissolved.');
+      else steps.push('Mix the IDY with the flour; keep the warm water for the wet ingredients.');
+      steps.push(`Combine flour, remaining sugar, salt and baking powder. Add yogurt, melted butter or ghee, nigella seeds and ${type === 'idy' ? 'the warm water' : 'the yeast-water mixture'}; bring together into a very soft dough.`);
+      steps.push('Knead for about 10 min until smooth and elastic, keeping the dough soft.');
+      steps.push('Place in a buttered bowl, cover and leave warm for about 1 hr, until doubled.');
+      steps.push('Divide into the selected number of balls and keep covered.');
+      steps.push('Heat a large non-stick frying pan over high heat.');
+      steps.push('Roll each ball into a teardrop roughly 21 cm long and 13 cm at its widest point.');
+      steps.push('Dry-fry for about 3 min until puffed, then turn and cook for another 3–4 min until cooked through and charred in patches.');
+      steps.push('Brush each naan with melted butter or ghee, cover and keep warm while cooking the rest.');
+    } else {
+      steps = [...r.method];
+      if (type === 'ady') steps.unshift('Bloom active dry yeast in a little warm recipe liquid for 10 min.');
+      if (type === 'fresh') steps.unshift('Crumble fresh yeast into a little recipe liquid before mixing.');
+
+      if (key === 'focaccia' && $('#yeastCalc')?.value === 'ferment') {
+        const hrs = read('fermentHours', r.ferment.hours, 1, 120);
+        const temp = read('fermentTemp', r.ferment.temp, 1, 35);
+        steps = steps.filter(s => !/^Ferment until airy/i.test(s));
+        const idx = Math.min(4, steps.length);
+        steps.splice(idx,0,`${temp <= 8 ? 'Cold ferment' : 'Ferment'} about ${fmt(hrs)} hr at ~${fmt(temp)}°C.`);
+      }
+    }
+
+    $('#methodList').innerHTML = steps.map(s => `<li>${s}</li>`).join('');
+  }
+
+  function pairs(count, cls) {
+    let h = `<div class="pairs">`;
+    for (let i=0;i<count;i+=2) {
+      h += `<div class="pair"><span class="${cls}"></span>${i+1<count?`<span class="${cls}"></span>`:''}</div>`;
+    }
+    return h + '</div>';
+  }
+
+  function renderIcon() {
+    const k = $('#bread').value;
+    const stage = $('#stage');
+    $('#visualLabel').textContent = '';
+
+    if (k==='pizza') {
+      const c=Math.round(read('balls',3,1,50)), w=read('weight',310,50,1000);
+      $('#visualTitle').textContent='DOUGH PORTIONS';
+      $('#visualLabel').textContent=`${c} × ${fmt(w)} G`;
+      stage.innerHTML=pairs(c,'ball');
+    } else if (k==='cinnamon') {
+      const c=Math.round(read('rolls',8,1,50));
+      $('#visualTitle').textContent='CINNAMON BUNS';
+      $('#visualLabel').textContent=`${c} ROLLS`;
+      stage.innerHTML=pairs(c,'roll');
+    } else if (k==='khubz') {
+      const c=Math.round(read('khubzQty',recipe().qty,1,50));
+      $('#visualTitle').textContent='LEBANESE KHUBZ / PITA';
+      $('#visualLabel').textContent=`${c} × 18–20 CM`;
+      stage.innerHTML=pairs(c,'pita');
+    } else if (k==='naan') {
+      const c=Math.round(read('naanQty',recipe().qty,1,50));
+      $('#visualTitle').textContent='NAAN';
+      $('#visualLabel').textContent=`${c} × ~21 × 13 CM`;
+      stage.innerHTML=pairs(c,'naan');
+    } else if (k==='yorkshire') {
+      const c=Math.max(1,Math.round(read('yorkQty',recipe().qty,.1,100)));
+      $('#visualTitle').textContent='YORKSHIRE PUDDINGS';
+      $('#visualLabel').textContent=`~${fmt(read('yorkQty',recipe().qty,.1,100))} PUDS`;
+      stage.innerHTML=pairs(c,'yorkie');
+    } else if (k==='pancakes') {
+      const c=Math.max(1,Math.round(read('yorkQty',recipe().qty,.1,100)));
+      $('#visualTitle').textContent='PANCAKES';
+      $('#visualLabel').textContent=`~${fmt(read('yorkQty',recipe().qty,.1,100))} × 11.5 CM`;
+      stage.innerHTML=pairs(c,'pancake');
+    } else if (k==='crepes') {
+      const c=Math.max(1,Math.round(read('yorkQty',recipe().qty,.1,100)));
+      $('#visualTitle').textContent='CRÊPES';
+      $('#visualLabel').textContent=`~${fmt(read('yorkQty',recipe().qty,.1,100))} × 18 CM`;
+      stage.innerHTML=pairs(c,'crepe');
+    } else if (k==='focaccia') {
+      $('#visualTitle').textContent='FOCACCIA PROFILE';
+      stage.innerHTML=`<div class="foc"><i></i><i></i><i></i><i></i></div>`;
+    } else if (k==='sandwich') {
+      $('#visualTitle').textContent='LOAF PROFILE';
+      stage.innerHTML=`<div class="slice"></div>`;
+    } else if (k==='sourdough') {
+      $('#visualTitle').textContent='LOAF PROFILE';
+      stage.innerHTML=`<div class="sd"></div>`;
+    } else if (k==='milk') {
+      $('#visualTitle').textContent='MILK BREAD PROFILE';
+      stage.innerHTML=`<div class="milkicon"><span></span><span></span><span></span></div>`;
+    } else {
+      $('#visualTitle').textContent='BRIOCHE BUNS';
+      stage.innerHTML=pairs(4,'bun');
+    }
+  }
+
+  function setYield(rawDough, label, bakeLoss=.12) {
+    const baked = rawDough * (1-bakeLoss);
+    $('#yieldLine').innerHTML = `<span>${label}</span><span>Raw dough ${fmt(rawDough)} g${bakeLoss>0?` / baked ~${fmt(baked)} g`:''}</span>`;
+    lastResult.yield = `${label} | Raw dough ${fmt(rawDough)} g${bakeLoss>0?` | Approx. baked ${fmt(baked)} g`:''}`;
+  }
+
+  function calculate() {
+    const key = $('#bread').value;
+    const r = recipe();
+    const type = $('#type')?.value || r.def || null;
+    $('#rows').innerHTML = '';
+    lastResult = { title:$('#bread').selectedOptions[0].textContent, lines:[], yield:'' };
+
+    let total = 0;
+    let rawDough = 0;
+    let totalLabel = 'TOTAL';
+
+    if (key === 'yorkshire') {
+      syncYorkshireBasisUI();
+      const f=read('flour',r.flour,1,5000);
+      const q=read('yorkQty',r.qty,.1,100);
+      const milk=f*r.milkPct/100;
+      const eggMass=f*r.eggPct/100;
+      const oilMl=q*r.oilMlPer;
+      addRow('Plain flour','100%',f);
+      addRow('Whole milk',pct(r.milkPct),milk,'','ml');
+      addRow('Large egg',pct(r.eggPct),eggMass,eggNote(eggMass));
+      addRow('Sunflower / vegetable oil','—',oilMl,'for the tin','ml');
+      rawDough=total=f+milk+eggMass;
+      totalLabel='BATTER';
+      $('#yieldLine').innerHTML=`<span>~${fmt(q)} standard muffin-size puddings</span><span>Batter ~${fmt(rawDough)} g</span>`;
+      lastResult.yield=`~${fmt(q)} standard muffin-size Yorkshire puddings | Batter ~${fmt(rawDough)} g`;
+      $('#foot').textContent=`~${fmt(q)} Yorkshire puddings // standard muffin tin`;
+
+    } else if (key === 'pancakes') {
+      syncYorkshireBasisUI();
+      const f=read('flour',r.flour,1,5000);
+      const q=read('yorkQty',r.qty,.1,100);
+      const milk=f*(283/180);
+      const eggMass=f*(100/180);
+      const butter=f*(43/180);
+      const sugar=f*(25/180);
+      const salt=f*(4.5/180);
+      const bakingPowder=f*(8/180);
+      addRow('Plain flour','100%',f);
+      addRow('Milk',pct(283/180*100),milk);
+      addRow('Large egg',pct(100/180*100),eggMass,eggNote(eggMass));
+      addRow('Melted butter / vegetable oil',pct(43/180*100),butter);
+      addRow('Granulated sugar',pct(25/180*100),sugar);
+      addRow('Baking powder',pct(8/180*100),bakingPowder,'~'+fmt((q/12)*2)+' tsp');
+      addRow('Fine salt',pct(4.5/180*100),salt,'~'+fmt((q/12)*0.75)+' tsp');
+      rawDough=total=f+milk+eggMass+butter+sugar+salt+bakingPowder;
+      totalLabel='BATTER';
+      $('#yieldLine').innerHTML=`<span>~${fmt(q)} × 11.5 cm pancakes</span><span>Batter ~${fmt(rawDough)} g</span>`;
+      lastResult.yield=`~${fmt(q)} American-style pancakes, about 11.5 cm each | Batter ~${fmt(rawDough)} g`;
+      $('#foot').textContent=`~${fmt(q)} pancakes // 11.5 cm standard size`;
+
+    } else if (key === 'crepes') {
+      syncYorkshireBasisUI();
+      const f=read('flour',r.flour,1,5000);
+      const q=read('yorkQty',r.qty,.1,100);
+      const milk=f*3;
+      const eggMass=f;
+      const oilMl=f*.15;
+      addRow('Plain flour','100%',f);
+      addRow('Milk','300%',milk,'','ml');
+      addRow('Large egg','100%',eggMass,eggNote(eggMass));
+      addRow('Sunflower / vegetable oil','—',oilMl,'in the batter','ml');
+      rawDough=total=f+milk+eggMass+(oilMl*.92);
+      totalLabel='BATTER';
+      $('#yieldLine').innerHTML=`<span>~${fmt(q)} × 18 cm crêpes</span><span>Batter ~${fmt(rawDough)} g</span>`;
+      lastResult.yield=`~${fmt(q)} thin crêpes, about 18 cm each | Batter ~${fmt(rawDough)} g`;
+      $('#foot').textContent=`~${fmt(q)} crêpes // 18 cm standard size`;
+
+    } else if (key === 'pizza') {
+      const balls=Math.round(read('balls',3,1,50));
+      const weight=read('weight',310,50,1000);
+      const target=balls*weight;
+      const h=read('hyd',r.hyd,40,100)/100;
+      const s=read('salt',r.salt,0,10)/100;
+      const o=$('#oilOn')?.checked ? read('oil',r.oilPct,0,20)/100 : 0;
+
+      if (type === 'starter') {
+        const sp=read('starter',r.starter,1,100)/100;
+        const sh=read('starterHyd',100,25,250)/100;
+        const tf=target/(1+h+s+o);
+        const sm=tf*sp, sf=sm/(1+sh), sw=sm-sf;
+        addRow('Flour to add','100%',tf-sf);
+        addRow('Water to add',pct(h*100),tf*h-sw);
+        addRow('Salt',pct(s*100),tf*s);
+        addRow('Sourdough starter',pct(sp*100),sm);
+        if(o)addRow('Olive oil',pct(o*100),tf*o);
+      } else {
+        const yp=commercialYeastPct(r,type);
+        const y=yp/100;
+        const f=target/(1+h+s+o+y);
+        addRow('Flour','100%',f);
+        addRow('Water',pct(h*100),f*h);
+        addRow('Salt',pct(s*100),f*s);
+        addRow(names[type],pct(yp),f*y);
+        if(o)addRow('Olive oil',pct(o*100),f*o);
+      }
+
+      total=rawDough=target;
+      setYield(rawDough,`${balls} × ${fmt(weight)} g portions`,0);
+      $('#foot').textContent=`${balls} × ${fmt(weight)} g dough balls`;
+
+    } else if (key === 'khubz') {
+      const qty=Math.round(read('khubzQty',r.qty,1,50));
+      const f=qty*r.flourPer;
+      const h=r.hyd/100;
+      const s=read('salt',r.salt,0,10)/100;
+      const yp=read('yeastPct',r.yeastPct[type],.001,15), y=yp/100;
+      const water=f*h, salt=f*s, sugar=f*r.sugar/100, oil=f*r.oilPct/100, yeast=f*y;
+
+      addRow('Strong white bread flour','100%',f);
+      addRow('Warm water',pct(r.hyd),water,`~${fmt(water)} ml`);
+      addRow(names[type],pct(yp),yeast);
+      addRow('Fine salt',pct(s*100),salt);
+      addRow('Sugar',pct(r.sugar),sugar);
+      addRow('Olive oil',pct(r.oilPct),oil);
+
+      total=rawDough=f+water+yeast+salt+sugar+oil;
+      const per=rawDough/qty;
+      $('#yieldLine').innerHTML=`<span>${qty} breads × ~${fmt(per)} g dough</span><span>Roll to 18–20 cm / ~3 mm</span>`;
+      lastResult.yield=`${qty} Lebanese khubz / pita × ~${fmt(per)} g dough | Roll to 18–20 cm and ~3 mm thick`;
+      $('#foot').textContent=`${qty} khubz // 18–20 cm // very high heat`;
+
+    } else if (key === 'naan') {
+      const qty=Math.round(read('naanQty',r.qty,1,50));
+      const sc=qty/6;
+      const f=r.flour*sc;
+      const water=r.waterMl*sc;
+      const yogurt=r.yogurtMl*sc;
+      const butter=r.butter*sc;
+      const yp=read('yeastPct',r.yeastPct[type],.001,15), yeast=f*yp/100;
+      const sugarTsp=r.sugarTsp*sc, bakingTsp=r.bakingPowderTsp*sc, saltTsp=r.saltTsp*sc, nigellaTbsp=r.nigellaTbsp*sc;
+
+      addRow('Strong white bread flour','100%',f);
+      addRow('Warm water',pct(r.waterMl/r.flour*100),water,'','ml');
+      addRow('Natural yogurt',pct(r.yogurtMl/r.flour*100),yogurt,'','ml');
+      addRow(names[type],pct(yp),yeast);
+      addRow('Butter / ghee — dough',pct(r.butter/r.flour*100),butter);
+      addTextRow('Golden caster sugar','—',`${fmt(sugarTsp)} tsp`);
+      addTextRow('Fine salt','—',`${fmt(saltTsp)} tsp`);
+      addTextRow('Baking powder','—',`${fmt(bakingTsp)} tsp`);
+      addTextRow('Nigella seeds','—',`${fmt(nigellaTbsp)} tbsp`);
+      addTextRow('Butter / ghee — brushing','—',`${fmt(2*sc)}–${fmt(3*sc)} tbsp`,'for tray + brushing');
+
+      // Approximate total includes reasonable gram equivalents for the source's spoon measures.
+      const smallDry=(8+3+2+9)*sc;
+      total=rawDough=f+water+yogurt+butter+yeast+smallDry;
+      totalLabel='DOUGH ~';
+      const per=rawDough/qty;
+      $('#yieldLine').innerHTML=`<span>${qty} naans × ~${fmt(per)} g dough</span><span>Roll to ~21 × 13 cm</span>`;
+      lastResult.yield=`${qty} naans × ~${fmt(per)} g dough | Roll to roughly 21 × 13 cm`;
+      $('#foot').textContent=`${qty} naans // hot dry frying pan`;
+
+    } else if (key === 'focaccia') {
+      const f=read('flour',r.flour,100,5000);
+      const h=read('hyd',r.hyd,40,100)/100;
+      const s=read('salt',r.salt,0,10)/100;
+      const yp=commercialYeastPct(r,type), y=yp/100;
+      const sugar=f*5/360, doughOil=f*18/360, topOil=f*26/360;
+
+      addRow('Flour','100%',f);
+      addRow('Water',pct(h*100),f*h);
+      addRow('Salt',pct(s*100),f*s);
+      addRow('Sugar',pct(5/360*100),sugar);
+      addRow(names[type],pct(yp),f*y);
+      addRow('Olive oil — dough','5%',doughOil);
+      addRow('Olive oil — pan/top',pct(26/360*100),topOil);
+
+      rawDough=f+f*h+f*s+sugar+f*y+doughOil;
+      total=rawDough+topOil;
+      setYield(rawDough,'1 focaccia',.13);
+      $('#foot').textContent=`${fmt(f)} g flour basis // focaccia`;
+
+    } else if (key === 'sandwich') {
+      const f=read('flour',r.flour,100,5000);
+      const h=read('hyd',r.hyd,40,100)/100;
+      const yp=read('yeastPct',r.yeastPct[type],.001,15), y=yp/100;
+      const s=read('salt',r.salt,0,10)/100;
+      const butter=f*.07, sugar=f*.05, salt=f*s;
+
+      addRow('Strong white bread flour','100%',f);
+      addRow('Whole milk',pct(h*100),f*h);
+      addRow(names[type],pct(yp),f*y);
+      addRow('Fine salt',pct(s*100),salt);
+      addRow('Sugar / honey','5%',sugar);
+      addRow('Softened butter','7%',butter);
+
+      total=rawDough=f+f*h+f*y+salt+sugar+butter;
+      setYield(rawDough,'1 × 900 g / 2 lb tin',.12);
+      $('#foot').textContent=`${fmt(f)} g flour basis // white sandwich loaf`;
+
+    } else if (key === 'sourdough') {
+      const f=read('flour',r.flour,100,5000);
+      const h=read('hyd',r.hyd,40,100)/100;
+      const s=read('salt',r.salt,0,10)/100;
+      const sp=read('starter',r.starter,1,100)/100;
+      const sh=read('starterHyd',100,25,250)/100;
+      const sm=f*sp, sf=sm/(1+sh), sw=sm-sf;
+
+      addRow('Flour to add','100%',f-sf);
+      addRow('Water to add',pct(h*100),f*h-sw);
+      addRow('Salt',pct(s*100),f*s);
+      addRow('Sourdough starter',pct(sp*100),sm);
+
+      total=rawDough=(f-sf)+(f*h-sw)+(f*s)+sm;
+      setYield(rawDough,'1 sourdough loaf',.14);
+      $('#foot').textContent=`${fmt(f)} g total flour basis // sourdough loaf`;
+
+    } else if (key === 'milk') {
+      const f=read('flour',r.flour,100,5000);
+      const sc=f/314;
+      const h=read('hyd',r.hyd,40,100)/100;
+      const liq=f*h;
+      const tw=liq*43/199, tm=liq*43/199, dm=liq*113/199;
+      const yp=read('yeastPct',r.yeastPct[type],.001,15), y=yp/100;
+
+      group('Tangzhong');
+      addRow('Bread flour',pct(14/314*100),14*sc);
+      addRow('Water',pct(tw/f*100),tw);
+      addRow('Whole milk',pct(tm/f*100),tm);
+
+      group('Dough');
+      addRow('Bread flour',pct(300/314*100),300*sc);
+      addRow('Dry milk',pct(14/314*100),14*sc);
+      addRow('Sugar',pct(50/314*100),50*sc);
+      addRow('Salt',pct(6/314*100),6*sc);
+      addRow(names[type],pct(yp),f*y);
+      addRow('Whole milk',pct(dm/f*100),dm);
+      addRow('Egg',pct(50/314*100),50*sc,eggNote(50*sc));
+      addRow('Butter',pct(57/314*100),57*sc);
+
+      total=rawDough=f+liq+(14+50+6+50+57)*sc+f*y;
+      setYield(rawDough,'1 milk bread loaf',.11);
+      $('#foot').textContent=`${fmt(f)} g total flour basis // Japanese milk bread`;
+
+    } else if (key === 'brioche') {
+      const f=read('flour',r.flour,100,5000);
+      const h=read('hyd',r.hyd,30,100)/100;
+      const liq=f*h, egg=liq*50/59, water=liq*9/59;
+      const s=read('salt',r.salt,0,10)/100;
+      const yp=read('yeastPct',r.yeastPct[type],.001,15), y=yp/100;
+
+      addRow('Flour','100%',f);
+      addRow('Egg',pct(egg/f*100),egg,eggNote(egg));
+      addRow('Water',pct(water/f*100),water);
+      addRow('Sugar','12%',f*.12);
+      addRow('Salt',pct(s*100),f*s);
+      addRow('Butter','50%',f*.5);
+      addRow(names[type],pct(yp),f*y);
+
+      total=rawDough=f+egg+water+f*.12+f*s+f*.5+f*y;
+      setYield(rawDough,'Brioche dough',.10);
+      $('#foot').textContent=`${fmt(f)} g flour basis // brioche`;
+
+    } else {
+      const rolls=Math.round(read('rolls',r.rolls,1,50));
+      const sc=rolls/8;
+      const yp=read('yeastPct',r.yeastPct[type],.001,15);
+      const flourTotal=(24+300)*sc;
+      const yeastMass=flourTotal*yp/100;
+
+      group('Tangzhong');
+      addRow('Bread flour','—',24*sc);
+      addRow('Whole milk','—',113*sc);
+
+      group('Dough');
+      addRow('Bread flour','—',300*sc);
+      addRow('Whole milk','—',151*sc);
+      addRow('Salt','—',6*sc);
+      addRow('Granulated sugar','—',25*sc);
+      addRow(names[type],pct(yp),yeastMass);
+      addRow('Unsalted butter','—',57*sc);
+
+      group('Filling');
+      addRow('Butter','—',14*sc);
+      addRow('Brown sugar','—',107*sc);
+      addRow('Bread flour','—',14*sc);
+      addRow('Ground cinnamon','—',9*sc);
+      addRow('Salt','—',.4*sc);
+
+      rawDough=(24+113+300+151+6+25+57)*sc+yeastMass;
+      const filling=(14+107+14+9+.4)*sc;
+      total=rawDough+filling;
+      const per=rawDough/rolls;
+      $('#yieldLine').innerHTML=`<span>${rolls} rolls × ~${fmt(per)} g dough</span><span>Filling ${fmt(filling)} g</span>`;
+      lastResult.yield=`${rolls} rolls × ~${fmt(per)} g dough | Filling ${fmt(filling)} g`;
+      $('#foot').textContent=`${rolls} cinnamon buns`;
+    }
+
+    $('#total').textContent=`${totalLabel} / ${fmt(total)} G`;
+    $('#note').textContent=r.desc;
+    renderMethod();
+    renderIcon();
+    updateModifiedBadge();
+    saveLastState();
+  }
+
+  function loadSavedStore() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(SAVE_KEY) || '{}');
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch(e) { return {}; }
+  }
+
+  function writeSavedStore(store) {
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(store)); return true; }
+    catch(e) { $('#status').textContent='Saving unavailable'; return false; }
+  }
+
+  function loadDefaultMap() {
+    try { const v=JSON.parse(localStorage.getItem(DEFAULT_KEY)||'{}'); return v&&typeof v==='object'?v:{}; }
+    catch(e) { return {}; }
+  }
+
+  function writeDefaultMap(map) {
+    try { localStorage.setItem(DEFAULT_KEY,JSON.stringify(map)); return true; }
+    catch(e) { return false; }
+  }
+
+  function presetIsModified() {
+    const r=recipe(), key=$('#bread').value, type=$('#type')?.value||r.def;
+    const neq=(a,b)=>Math.abs(Number(a)-Number(b))>0.0001;
+    if(type!==r.def) return true;
+    if(key==='pizza'&&(neq(read('balls',3),3)||neq(read('weight',310),310)||neq(read('hyd',r.hyd),r.hyd))) return true;
+    if(key==='cinnamon'&&neq(read('rolls',r.rolls),r.rolls)) return true;
+    if(key==='khubz'&&neq(read('khubzQty',r.qty),r.qty)) return true;
+    if(key==='naan'&&neq(read('naanQty',r.qty),r.qty)) return true;
+    if(['yorkshire','pancakes','crepes'].includes(key)&&(neq(read('flour',r.flour),r.flour)||neq(read('yorkQty',r.qty),r.qty))) return true;
+    if(!['pizza','cinnamon','yorkshire','pancakes','crepes'].includes(key)&&(neq(read('flour',r.flour),r.flour)||neq(read('hyd',r.hyd),r.hyd))) return true;
+    if($('#salt')&&neq(read('salt',r.salt),r.salt)) return true;
+    if($('#starter')&&neq(read('starter',r.starter||20),r.starter||20)) return true;
+    if($('#starterHyd')&&neq(read('starterHyd',100),100)) return true;
+    if($('#yeastCalc')&&$('#yeastCalc').value!=='recipe') return true;
+    if($('#yeastPct')&&neq(read('yeastPct',r.yeastPct?.[type]||0),r.yeastPct?.[type]||0)) return true;
+    if($('#fermentHours')&&neq(read('fermentHours',r.ferment?.hours||24),r.ferment?.hours||24)) return true;
+    if($('#fermentTemp')&&neq(read('fermentTemp',r.ferment?.temp||4),r.ferment?.temp||4)) return true;
+    if($('#oilOn')?.checked) return true;
+    return false;
+  }
+
+  function updateModifiedBadge() {
+    $('#modifiedBadge')?.classList.toggle('hidden',!presetIsModified());
+  }
+
+  function saveLastState() {
+    try {
+      localStorage.setItem(STATE_KEY,JSON.stringify({bread:$('#bread').value,values:captureCurrentSettings(),advancedOpen:$('#advancedDetails').open,savedAt:Date.now()}));
+    } catch(e) {}
+  }
+
+  let stateTimer=null;
+  function scheduleStateSave() { clearTimeout(stateTimer); stateTimer=setTimeout(saveLastState,180); }
+
+  function applyValues(values={}) {
+    if(values.type&&$('#type')) $('#type').value=values.type;
+    renderAdvanced();
+    Object.entries(values).forEach(([id,value])=>{if(id==='oilOn'||id==='type')return;const el=$('#'+id);if(el)el.value=value;});
+    if($('#oilOn')){$('#oilOn').checked=!!values.oilOn;$('#oilField')?.classList.toggle('hidden',!$('#oilOn').checked);}
+    if($('#yeastCalc')){$('#yeastCalc').value=values.yeastCalc||'recipe';$('#fermentFields')?.classList.toggle('hidden',$('#yeastCalc').value!=='ferment');}
+  }
+
+  function restoreLastState() {
+    let state=null;
+    try { state=JSON.parse(localStorage.getItem(STATE_KEY)||'null'); } catch(e) {}
+    if(!state||!recipes[state.bread]) { handleBreadChange(); return; }
+    $('#bread').value=state.bread;
+    renderInputs();
+    applyValues(state.values||{});
+    $('#advancedDetails').open=!!state.advancedOpen;
+    $('#method').open=false;
+    calculate();
+    renderSavedRecipes();
+  }
+
+  function defaultEntryFor(key) {
+    const id=loadDefaultMap()[key];
+    if(!id) return null;
+    const list=loadSavedStore()[key];
+    return Array.isArray(list)?list.find(x=>x.id===id)||null:null;
+  }
+
+  function handleBreadChange() {
+    const entry=defaultEntryFor($('#bread').value);
+    if(entry) applySavedRecipe(entry,{silent:true});
+    else resetPreset();
+  }
+
+  function captureCurrentSettings() {
+    const ids=['balls','weight','flour','hyd','rolls','khubzQty','naanQty','yorkBasis','yorkQty','type','salt','starter','starterHyd','yeastCalc','yeastPct','fermentHours','fermentTemp','oil'];
+    const values={};
+    ids.forEach(id=>{ const el=$('#'+id); if(el) values[id]=el.value; });
+    if($('#oilOn')) values.oilOn=$('#oilOn').checked;
+    return values;
+  }
+
+  function defaultSavedName() {
+    const breadName=$('#bread').selectedOptions[0].textContent;
+    if($('#bread').value==='pizza') return `${breadName} ${fmt(read('hyd',recipe().hyd,40,100))}%`;
+    if($('#bread').value==='cinnamon') return `${breadName} × ${Math.round(read('rolls',recipe().rolls,1,50))}`;
+    if($('#bread').value==='khubz') return `${breadName} × ${Math.round(read('khubzQty',recipe().qty,1,50))}`;
+    if($('#bread').value==='naan') return `${breadName} × ${Math.round(read('naanQty',recipe().qty,1,50))}`;
+    if(['yorkshire','pancakes','crepes'].includes($('#bread').value)) return `${breadName} × ${fmt(read('yorkQty',recipe().qty,.1,100))}`;
+    if($('#flour')) return `${breadName} ${fmt(read('flour',recipe().flour,100,5000))}g`;
+    return breadName;
+  }
+
+  function saveCurrentRecipe() {
+    calculate();
+    const name=window.prompt('Recipe name',defaultSavedName());
+    if(!name||!name.trim()) return;
+    const key=$('#bread').value,store=loadSavedStore(),list=Array.isArray(store[key])?store[key]:[],cleanName=name.trim();
+    const entry={id:`${Date.now()}-${Math.random().toString(36).slice(2,8)}`,name:cleanName,bread:key,values:captureCurrentSettings(),advancedOpen:$('#advancedDetails').open,savedAt:Date.now()};
+    const existing=list.findIndex(item=>item.name.toLowerCase()===cleanName.toLowerCase());
+    if(existing>=0){entry.id=list[existing].id;list[existing]=entry;}else{list.unshift(entry);}
+    store[key]=list;
+    if(writeSavedStore(store)){
+      renderSavedRecipes();$('#savedDetails').open=true;
+      $('#status').textContent=existing>=0?'Saved recipe updated':'Recipe saved';
+      window.setTimeout(()=>$('#status').textContent='',1600);
+    }
+  }
+
+  function applySavedRecipe(entry,options={}) {
+    if(!entry||!recipes[entry.bread]) return;
+    $('#bread').value=entry.bread;
+    renderInputs();
+    applyValues(entry.values||{});
+    $('#advancedDetails').open=!!entry.advancedOpen;
+    $('#method').open=false;
+    calculate();
+    renderSavedRecipes();
+    updateModifiedBadge();
+    saveLastState();
+    if(!options.silent){$('#status').textContent='Recipe loaded';window.setTimeout(()=>$('#status').textContent='',1400);}
+  }
+
+  function deleteSavedRecipe(id) {
+    const key=$('#bread').value,store=loadSavedStore(),list=Array.isArray(store[key])?store[key]:[],item=list.find(x=>x.id===id);
+    if(!item||!window.confirm(`Delete “${item.name}”?`)) return;
+    store[key]=list.filter(x=>x.id!==id);writeSavedStore(store);
+    const defaults=loadDefaultMap();if(defaults[key]===id){delete defaults[key];writeDefaultMap(defaults);}
+    renderSavedRecipes();
+    $('#status').textContent='Saved recipe deleted';window.setTimeout(()=>$('#status').textContent='',1400);
+  }
+
+  function setDefaultRecipe(id) {
+    const key=$('#bread').value,defaults=loadDefaultMap();
+    if(defaults[key]===id){delete defaults[key];$('#status').textContent='Default cleared';}
+    else{defaults[key]=id;$('#status').textContent='Default recipe set';}
+    writeDefaultMap(defaults);renderSavedRecipes();
+    window.setTimeout(()=>$('#status').textContent='',1400);
+  }
+
+  function renderSavedRecipes() {
+    const key=$('#bread').value,store=loadSavedStore(),list=Array.isArray(store[key])?store[key]:[],wrap=$('#savedList'),defaultId=loadDefaultMap()[key];
+    if(!wrap)return;
+    if(!list.length){wrap.innerHTML='<div class="saved-empty">No saved recipes for this bread type.</div>';return;}
+    wrap.innerHTML='';
+    list.sort((a,b)=>(b.savedAt||0)-(a.savedAt||0)).forEach(item=>{
+      const row=document.createElement('div');row.className='saved-row';
+      const name=document.createElement('div');name.className='saved-name';name.textContent=item.name+(item.id===defaultId?' •':'');
+      const load=document.createElement('button');load.className='saved-btn';load.type='button';load.textContent='Load';load.addEventListener('click',()=>applySavedRecipe(item));
+      const def=document.createElement('button');def.className='saved-btn';def.type='button';def.textContent=item.id===defaultId?'Default ✓':'Default';def.addEventListener('click',()=>setDefaultRecipe(item.id));
+      const del=document.createElement('button');del.className='saved-btn delete';del.type='button';del.textContent='Delete';del.addEventListener('click',()=>deleteSavedRecipe(item.id));
+      row.append(name,load,def,del);wrap.appendChild(row);
+    });
+  }
+
+  async function exportSavedRecipes() {
+    const payload={version:1,exportedAt:new Date().toISOString(),saved:loadSavedStore(),defaults:loadDefaultMap()};
+    const json=JSON.stringify(payload,null,2);
+    const file=new File([json],'dough-calculator-recipes.json',{type:'application/json'});
+    try {
+      if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+        await navigator.share({title:'Dough Calculator recipes',files:[file]});
+        $('#status').textContent='Exported';
+      } else {
+        const url=URL.createObjectURL(file),a=document.createElement('a');a.href=url;a.download=file.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);$('#status').textContent='Exported';
+      }
+    } catch(e) { if(e?.name!=='AbortError') $('#status').textContent='Export failed'; }
+    window.setTimeout(()=>$('#status').textContent='',1600);
+  }
+
+  function mergeImportedRecipes(payload) {
+    const incoming=payload?.saved&&typeof payload.saved==='object'?payload.saved:payload;
+    if(!incoming||typeof incoming!=='object'||Array.isArray(incoming)) throw new Error('Invalid recipe file');
+    const store=loadSavedStore();
+    Object.entries(incoming).forEach(([key,list])=>{
+      if(!recipes[key]||!Array.isArray(list)) return;
+      const current=Array.isArray(store[key])?store[key]:[];
+      list.forEach(item=>{
+        if(!item||typeof item!=='object'||!item.name||!item.values) return;
+        const idx=current.findIndex(x=>x.id===item.id||x.name?.toLowerCase()===item.name.toLowerCase());
+        if(idx>=0) current[idx]=item; else current.push(item);
+      });
+      store[key]=current;
+    });
+    writeSavedStore(store);
+    if(payload?.defaults&&typeof payload.defaults==='object'){
+      const defaults=loadDefaultMap();Object.entries(payload.defaults).forEach(([key,id])=>{if(recipes[key]&&typeof id==='string')defaults[key]=id;});writeDefaultMap(defaults);
+    }
+  }
+
+  async function importSavedFile(file) {
+    if(!file)return;
+    try {
+      const payload=JSON.parse(await file.text());mergeImportedRecipes(payload);renderSavedRecipes();$('#status').textContent='Recipes imported';
+    } catch(e) { $('#status').textContent='Import failed'; }
+    $('#importFile').value='';window.setTimeout(()=>$('#status').textContent='',1800);
+  }
+
+
+  let wakeLockSentinel = null;
+
+  function wakePreference() {
+    try {
+      const saved = localStorage.getItem(WAKE_KEY);
+      return saved === null ? true : saved === 'true';
+    } catch(e) { return true; }
+  }
+
+  function saveWakePreference(enabled) {
+    try { localStorage.setItem(WAKE_KEY, String(enabled)); } catch(e) {}
+  }
+
+  async function acquireWakeLock() {
+    if (!wakePreference() || document.visibilityState !== 'visible' || !('wakeLock' in navigator)) return;
+    if (wakeLockSentinel && !wakeLockSentinel.released) return;
+    try {
+      wakeLockSentinel = await navigator.wakeLock.request('screen');
+      wakeLockSentinel.addEventListener('release', () => { wakeLockSentinel = null; });
+    } catch(e) {
+      wakeLockSentinel = null;
+    }
+  }
+
+  async function releaseWakeLock() {
+    if (!wakeLockSentinel) return;
+    try { await wakeLockSentinel.release(); } catch(e) {}
+    wakeLockSentinel = null;
+  }
+
+  async function syncWakeLock() {
+    if (wakePreference()) await acquireWakeLock();
+    else await releaseWakeLock();
+  }
+
+  function initWakeLock() {
+    const toggle = $('#wakeOn');
+    if (!toggle) return;
+    toggle.checked = wakePreference();
+
+    if (!('wakeLock' in navigator)) {
+      toggle.checked = false;
+      toggle.disabled = true;
+      return;
+    }
+
+    toggle.addEventListener('change', async () => {
+      saveWakePreference(toggle.checked);
+      await syncWakeLock();
+      $('#status').textContent = toggle.checked ? 'Screen awake on' : 'Screen awake off';
+      window.setTimeout(() => $('#status').textContent = '', 1400);
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') syncWakeLock();
+    });
+    window.addEventListener('pageshow', syncWakeLock);
+    document.addEventListener('pointerdown', () => {
+      if (wakePreference() && !wakeLockSentinel) acquireWakeLock();
+    }, {passive:true});
+
+    syncWakeLock();
+  }
+
+  function buildCopyText() {
+    return [
+      lastResult.title.toUpperCase(),
+      lastResult.yield,
+      '',
+      ...lastResult.lines,
+      '',
+      'METHOD',
+      ...Array.from($('#methodList').children).map((li,i)=>`${i+1}. ${li.textContent}`)
+    ].filter(Boolean).join('\n');
+  }
+
+  async function copyRecipe() {
+    const text = buildCopyText();
+    let copied = false;
+
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        copied = true;
+      }
+    } catch(e) {}
+
+    if (!copied) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly','');
+      ta.style.position='fixed';
+      ta.style.opacity='0';
+      ta.style.pointerEvents='none';
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0,ta.value.length);
+      try { copied = document.execCommand('copy'); } catch(e) {}
+      ta.remove();
+    }
+
+    $('#status').textContent = copied ? 'Copied' : 'Copy failed';
+    window.clearTimeout(copyRecipe.timer);
+    copyRecipe.timer = window.setTimeout(()=>$('#status').textContent='',1800);
+  }
+
+  $('#bread').addEventListener('change', handleBreadChange);
+  $('#calc').addEventListener('click', calculate);
+  $('#reset').addEventListener('click', () => {
+    resetPreset();
+    $('#status').textContent='Preset reset';
+    window.setTimeout(()=>$('#status').textContent='',1400);
+  });
+  $('#copyRecipe').addEventListener('click', copyRecipe);
+  $('#saveRecipe').addEventListener('click', saveCurrentRecipe);
+  $('#exportRecipes').addEventListener('click', exportSavedRecipes);
+  $('#importRecipes').addEventListener('click',()=>$('#importFile').click());
+  $('#importFile').addEventListener('change',()=>importSavedFile($('#importFile').files?.[0]));
+
+  root.addEventListener('input',e=>{if(e.target.matches('input[type=number]')){updateModifiedBadge();scheduleStateSave();}});
+  root.addEventListener('change',e=>{if(e.target.matches('input,select')){updateModifiedBadge();saveLastState();}});
+
+  // Extra insurance against Safari's double-tap zoom on rapid +/- use.
+  document.addEventListener('gesturestart', e => e.preventDefault(), {passive:false});
+
+  initWakeLock();
+  restoreLastState();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    });
+  }
+})();
+</script>
+</body>
+</html>
