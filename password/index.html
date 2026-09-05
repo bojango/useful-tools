@@ -54,7 +54,7 @@ button{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:tran
 .note{border-top:1px solid var(--line);padding:8px 11px;font-size:8px;line-height:1.45;color:var(--muted)}
 .foot{padding-top:8px;text-align:center;font-size:8px;color:var(--muted)}
 input:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-@media(min-width:680px){.shell{padding:12px}.main{grid-template-columns:1fr 1fr;gap:11px}.result-panel{align-self:start}}
+@media(min-width:680px){.shell{padding:12px}}
 @media(max-width:390px){body{padding:7px}.shell{padding:8px}.actions{grid-template-columns:1fr}}
 </style>
 </head>
@@ -64,6 +64,19 @@ input:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:
     <div class="title">PASSWORD GENERATOR</div>
 
     <div class="main">
+      <section class="panel result-panel" aria-live="polite">
+        <div class="panel-head"><span class="label">Generated password</span><span class="tiny">LOCAL ONLY</span></div>
+        <div class="password-wrap">
+          <div id="password" class="password" role="textbox" aria-label="Generated password" tabindex="0"></div>
+          <div class="actions">
+            <button id="generate" class="primary" type="button">Generate password</button>
+            <button id="copy" class="secondary" type="button">Copy password</button>
+          </div>
+          <div id="status" class="status"></div>
+        </div>
+        <div class="note">Generated with the browser's cryptographic random number generator. The current password is retained only for this browser tab/session so it is still here when you return.</div>
+      </section>
+
       <section class="panel">
         <div class="panel-head"><span class="label">Password settings</span><span id="charSummary" class="tiny"></span></div>
         <div class="settings">
@@ -93,19 +106,6 @@ input:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:
             <span class="toggle"><input id="symbols" type="checkbox"><span class="track"></span></span>
           </label>
         </div>
-      </section>
-
-      <section class="panel result-panel" aria-live="polite">
-        <div class="panel-head"><span class="label">Generated password</span><span class="tiny">LOCAL ONLY</span></div>
-        <div class="password-wrap">
-          <div id="password" class="password" role="textbox" aria-label="Generated password" tabindex="0"></div>
-          <div class="actions">
-            <button id="generate" class="primary" type="button">Generate password</button>
-            <button id="copy" class="secondary" type="button">Copy password</button>
-          </div>
-          <div id="status" class="status"></div>
-        </div>
-        <div class="note">Generated with the browser's cryptographic random number generator. The current password is retained only for this browser tab/session so it is still here when you return.</div>
       </section>
     </div>
 
