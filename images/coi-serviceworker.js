@@ -50,9 +50,13 @@ if(typeof window==='undefined'){
   });
 }else{
   (()=>{
+    const reloadKey='usefulToolsImageCoiReload';
+    if(window.crossOriginIsolated){
+      sessionStorage.removeItem(reloadKey);
+      return;
+    }
     if(window.crossOriginIsolated!==false||!window.isSecureContext||!('serviceWorker' in navigator))return;
     const scriptURL=new URL(document.currentScript.src,location.href).href;
-    const reloadKey='usefulToolsImageCoiReload';
     const controllerIsOurs=()=>navigator.serviceWorker.controller?.scriptURL===scriptURL;
     const reloadOnce=()=>{
       if(sessionStorage.getItem(reloadKey)==='1')return;
@@ -69,6 +73,5 @@ if(typeof window==='undefined'){
       });
       if(registration.active)reloadOnce();
     }).catch(error=>console.error('Image compressor isolation worker failed:',error));
-    if(window.crossOriginIsolated)sessionStorage.removeItem(reloadKey);
   })();
 }
