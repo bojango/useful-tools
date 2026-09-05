@@ -1,5 +1,5 @@
-const CACHE='useful-tools-v9';
-const ASSETS=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./tools-menu.js','./password/','./password/index.html','./palette/','./palette/index.html','./images/','./images/index.html','./images/app.js','./images/raw-worker.js','./images/coi-serviceworker.js','./terminalfx/','./terminalfx/index.html','./terminalfx/style.css','./terminalfx/app.js','./adventure/','./adventure/index.html'];
+const CACHE='useful-tools-v10';
+const ASSETS=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./tools-menu.js','./password/','./password/index.html','./palette/','./palette/index.html','./images/','./images/index.html','./images/app.js','./images/raw-worker.js','./images/coi-serviceworker.js','./terminalfx/','./terminalfx/index.html','./terminalfx/style.css','./terminalfx/app.js','./adventure/','./adventure/index.html','./near/','./near/index.html'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
 });
