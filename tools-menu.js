@@ -35,11 +35,12 @@
   const onImages = /\/images$/i.test(path);
   const onTerminal = /\/terminalfx$/i.test(path);
   const onAdventure = /\/adventure$/i.test(path);
-  const onRoot = !onPassword && !onPalette && !onImages && !onTerminal && !onAdventure;
-  const base = (onPassword || onPalette || onImages || onTerminal || onAdventure) ? '..' : '.';
+  const onNear = /\/near$/i.test(path);
+  const onRoot = !onPassword && !onPalette && !onImages && !onTerminal && !onAdventure && !onNear;
+  const base = (onPassword || onPalette || onImages || onTerminal || onAdventure || onNear) ? '..' : '.';
 
   const wrap = document.createElement('div');
-  wrap.className = `tools-menu-wrap${(onPalette || onAdventure) ? ' tools-menu-light' : ''}`;
+  wrap.className = `tools-menu-wrap${(onPalette || onAdventure || onNear) ? ' tools-menu-light' : ''}`;
   wrap.innerHTML = `
     <div id="toolsMenuPanel" class="tools-menu-panel" aria-hidden="true">
       <div class="tools-menu-head">Tools</div>
@@ -60,6 +61,9 @@
       </a>
       <a class="tools-menu-link" href="${base}/adventure/" ${onAdventure ? 'aria-current="page"' : ''}>
         <span>Adventure awaits</span><span class="tools-menu-status">06</span>
+      </a>
+      <a class="tools-menu-link" href="${base}/near/" ${onNear ? 'aria-current="page"' : ''}>
+        <span>What's near</span><span class="tools-menu-status">07</span>
       </a>
     </div>
     <button id="toolsMenuButton" class="tools-menu-btn" type="button" aria-label="Open tools menu" aria-expanded="false" aria-controls="toolsMenuPanel">
