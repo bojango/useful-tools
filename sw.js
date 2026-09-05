@@ -1,4 +1,4 @@
-const CACHE='useful-tools-v2';
+const CACHE='useful-tools-v3';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./tools-menu.js','./password/','./password/index.html','./palette/','./palette/index.html'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
