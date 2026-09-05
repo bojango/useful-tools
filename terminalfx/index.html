@@ -27,15 +27,39 @@
       <section class="panel">
         <div class="panel-head"><span class="label">System config</span><span id="renderStatus" class="tiny">IDLE</span></div>
         <div class="settings">
-          <div class="field"><label class="field-label" for="palette">Display mode (palette)</label><select id="palette" class="select">
-            <option value="termgreen">Termgreen</option><option value="amber">Amber CRT</option><option value="ice">Ice blue</option><option value="paper">Paperwhite</option><option value="gameboy">Game Boy</option><option value="cga">CGA</option><option value="red">Red alert</option><option value="violet">Violet</option>
-          </select><div id="paletteStrip" class="palette-strip" aria-hidden="true"></div></div>
-          <div class="field"><label class="field-label" for="dither">Signal noise (dither)</label><select id="dither" class="select">
-            <option value="ordered">Ordered</option><option value="floyd">Floyd–Steinberg</option><option value="atkinson">Atkinson</option><option value="threshold">Threshold</option><option value="random">Random noise</option><option value="none">None</option>
+          <div class="field"><label class="field-label" for="renderMode">Output mode</label><select id="renderMode" class="select">
+            <option value="bitmap">Bitmap</option>
+            <option value="ascii">ASCII</option>
           </select></div>
+
+          <div class="field"><label class="field-label" for="palette">Display mode (palette)</label><select id="palette" class="select">
+            <option value="termgreen">Termgreen</option>
+            <option value="amber">Amber CRT</option>
+            <option value="ice">Ice blue</option>
+            <option value="paper">Paperwhite</option>
+            <option value="gameboy">Game Boy</option>
+            <option value="cga">CGA</option>
+            <option value="red">Red alert</option>
+            <option value="violet">Violet</option>
+            <option value="appleii">Apple II</option>
+            <option value="pico8">PICO-8</option>
+            <option value="cyberpunk">Cyberpunk</option>
+            <option value="teletext">Teletext</option>
+          </select><div id="paletteStrip" class="palette-strip" aria-hidden="true"></div></div>
+
+          <div class="field"><label class="field-label" for="dither">Signal noise (dither)</label><select id="dither" class="select">
+            <option value="ordered">Ordered</option>
+            <option value="floyd">Floyd–Steinberg</option>
+            <option value="atkinson">Atkinson</option>
+            <option value="threshold">Threshold</option>
+            <option value="random">Random noise</option>
+            <option value="none">None</option>
+          </select></div>
+
           <div class="field"><label class="field-label" for="pixelSize">Resolution downscale</label><div class="range-row"><input id="pixelSize" type="range" min="1" max="24" value="4" step="1"><span id="pixelSizeValue" class="range-value">4px</span></div></div>
           <div class="field"><label class="field-label" for="brightness">Signal gain (bright)</label><div class="range-row"><input id="brightness" type="range" min="-100" max="100" value="0" step="1"><span id="brightnessValue" class="range-value">0</span></div></div>
           <div class="field"><label class="field-label" for="contrast">Contrast</label><div class="range-row"><input id="contrast" type="range" min="-100" max="100" value="0" step="1"><span id="contrastValue" class="range-value">0</span></div></div>
+
           <details class="advanced"><summary>Advanced signal controls</summary><div class="advanced-body">
             <div class="field"><label class="field-label" for="levels">Tonal levels</label><select id="levels" class="select"><option value="2">2 levels</option><option value="3">3 levels</option><option value="4" selected>4 levels</option></select></div>
             <div class="field"><label class="field-label" for="ditherStrength">Dither strength</label><div class="range-row"><input id="ditherStrength" type="range" min="0" max="150" value="85" step="1"><span id="ditherStrengthValue" class="range-value">85%</span></div></div>
@@ -44,6 +68,7 @@
             <div class="field"><label class="field-label" for="scanlines">Scanlines</label><div class="range-row"><input id="scanlines" type="range" min="0" max="100" value="0" step="1"><span id="scanlinesValue" class="range-value">0%</span></div></div>
             <div class="field"><label class="field-label" for="vignette">Vignette</label><div class="range-row"><input id="vignette" type="range" min="0" max="100" value="0" step="1"><span id="vignetteValue" class="range-value">0%</span></div></div>
             <div class="field"><label class="field-label" for="exportSize">Output resolution</label><select id="exportSize" class="select"><option value="source">Original</option><option value="4096">4096px long edge</option><option value="2048" selected>2048px long edge</option><option value="1080">1080px long edge</option></select></div>
+            <div class="field"><label class="field-label" for="asciiPreset">ASCII glyph set</label><select id="asciiPreset" class="select"><option value="standard">Standard</option><option value="dense">Dense</option><option value="blocks">Blocks</option><option value="tech">Tech</option></select></div>
             <div class="field switch-line"><span class="field-label">Processing</span><span class="tiny">LOCAL ONLY</span></div>
           </div></details>
         </div>
@@ -59,9 +84,14 @@
           <div id="previewStage" class="preview-stage">
             <div id="noSignal" class="no-signal"><strong>NO SIGNAL</strong><span>Waiting for input stream…</span></div>
             <img id="originalPreview" class="preview-original" alt="Original photo preview" hidden>
-            <canvas id="outputCanvas" hidden></canvas>
+            <canvas id="outputCanvas" class="preview-output" hidden></canvas>
           </div>
-          <div class="preview-meta"><div class="meta-cell"><div class="meta-k">Source</div><div id="sourceMeta" class="meta-v">—</div></div><div class="meta-cell"><div class="meta-k">Output</div><div id="outputMeta" class="meta-v">—</div></div><div class="meta-cell"><div class="meta-k">Palette</div><div id="paletteMeta" class="meta-v">TERMGREEN</div></div></div>
+          <div class="preview-meta preview-meta-4">
+            <div class="meta-cell"><div class="meta-k">Source</div><div id="sourceMeta" class="meta-v">—</div></div>
+            <div class="meta-cell"><div class="meta-k">Output</div><div id="outputMeta" class="meta-v">—</div></div>
+            <div class="meta-cell"><div class="meta-k">Palette</div><div id="paletteMeta" class="meta-v">TERMGREEN</div></div>
+            <div class="meta-cell"><div class="meta-k">Mode</div><div id="modeMeta" class="meta-v">BITMAP</div></div>
+          </div>
           <div class="preview-actions"><button id="compareBtn" class="secondary" type="button" disabled>Hold for original</button><button id="replaceBtn" class="secondary" type="button">Replace photo</button></div>
         </div>
       </section>
