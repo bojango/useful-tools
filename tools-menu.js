@@ -25,7 +25,6 @@
     .tools-menu-light .tools-menu-link:hover,.tools-menu-light .tools-menu-link:focus-visible{background:#fff;color:#151515}
     .tools-menu-light .tools-menu-link[aria-current="page"]{color:#151515;background:#fff}
     .tools-menu-light .tools-menu-status{color:#9b9991}
-    .tools-menu-light~*{}
     @media(max-width:520px){.tools-menu-wrap{right:10px;bottom:10px}.tools-menu-panel{width:min(220px,calc(100vw - 20px))}}
   `;
   document.head.appendChild(style);
@@ -35,12 +34,6 @@
   const onPalette = /\/palette$/i.test(path);
   const onRoot = !onPassword && !onPalette;
   const base = (onPassword || onPalette) ? '..' : '.';
-
-  if (onPalette) {
-    const paletteFix = document.createElement('style');
-    paletteFix.textContent = '.figure img{max-height:none!important;object-fit:initial!important}';
-    document.head.appendChild(paletteFix);
-  }
 
   const wrap = document.createElement('div');
   wrap.className = `tools-menu-wrap${onPalette ? ' tools-menu-light' : ''}`;
