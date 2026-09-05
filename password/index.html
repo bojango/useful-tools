@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#070c0b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Password Generator</title>
+<style>
+:root{
+  --bg:#070c0b;--panel:#0b1210;--panel2:#08100e;--line:#263a34;--line2:#1f312c;
+  --text:#e6eee9;--muted:#789087;--accent:#8cd7ad;
+}
+*{box-sizing:border-box}
+html{background:#000;color-scheme:dark;touch-action:manipulation}
+body{
+  margin:0;padding:10px;min-height:100vh;background:#000;color:var(--text);
+  font-family:Menlo,Consolas,"SFMono-Regular",monospace;-webkit-font-smoothing:antialiased;
+  touch-action:manipulation;overscroll-behavior:none
+}
+button,input{font:inherit}
+button{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+#app{width:min(100%,820px);margin:0 auto}
+.shell{border:1px solid var(--line);background:var(--bg);padding:10px}
+.title{border-bottom:1px solid var(--line);padding:3px 2px 11px;font-size:clamp(20px,4vw,28px);font-weight:900;line-height:1;letter-spacing:.06em}
+.label,.tiny{font-size:9px;line-height:1.15;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.main{display:grid;gap:9px;margin-top:10px}
+.panel{border:1px solid var(--line);background:var(--panel)}
+.panel-head{min-height:34px;display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid var(--line);padding:7px 11px}
+.settings{padding:5px 10px 7px}
+.field{min-width:0;padding:10px 2px 9px;border-bottom:1px solid var(--line2);background:transparent}
+.field:last-child{border-bottom:0}
+.field-label{display:block;font-size:9px;line-height:1.2;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.control-row{display:grid;grid-template-columns:28px minmax(0,1fr) 28px;align-items:center;gap:4px;margin-top:5px}
+.step-btn{width:28px;height:30px;border:0;background:transparent;color:#668078;font-size:15px;font-weight:500;line-height:1;padding:0;opacity:.78}
+.step-btn:active{color:var(--accent);opacity:1}
+.value-row{display:flex;align-items:baseline;justify-content:center;gap:6px;min-width:0}
+.value-row input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:var(--text);padding:0;text-align:center;font-size:22px;font-weight:900}
+.unit{font-size:9px;color:var(--muted);text-transform:uppercase}
+.switch-line{display:flex;min-height:38px;align-items:center;justify-content:space-between;gap:8px}
+.toggle{position:relative;width:36px;height:20px;flex:0 0 auto}
+.toggle input{position:absolute;opacity:0}
+.track{position:absolute;inset:0;border:1px solid var(--line);background:var(--panel2)}
+.track:before{content:"";position:absolute;width:12px;height:12px;left:3px;top:3px;background:var(--muted);transition:.15s}
+.toggle input:checked+.track:before{transform:translateX(16px);background:var(--accent)}
+.password-wrap{padding:12px 11px 11px}
+.password{min-height:66px;display:flex;align-items:center;width:100%;border:1px solid var(--line);background:var(--panel2);padding:12px;color:var(--text);font-size:clamp(18px,4.6vw,28px);font-weight:900;line-height:1.25;letter-spacing:.035em;word-break:break-all;overflow-wrap:anywhere}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.primary,.secondary{min-height:44px;padding:10px 14px;font-size:10px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
+.primary{border:1px solid var(--accent);background:var(--accent);color:var(--bg)}
+.secondary{border:1px solid var(--line);background:transparent;color:var(--text)}
+.status{min-height:24px;padding:8px 11px 0;text-align:center;font-size:8px;color:var(--accent)}
+.note{border-top:1px solid var(--line);padding:8px 11px;font-size:8px;line-height:1.45;color:var(--muted)}
+.foot{padding-top:8px;text-align:center;font-size:8px;color:var(--muted)}
+input:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media(min-width:680px){.shell{padding:12px}.main{grid-template-columns:1fr 1fr;gap:11px}.result-panel{align-self:start}}
+@media(max-width:390px){body{padding:7px}.shell{padding:8px}.actions{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="shell">
+    <div class="title">PASSWORD GENERATOR</div>
+
+    <div class="main">
+      <section class="panel">
+        <div class="panel-head"><span class="label">Password settings</span><span id="charSummary" class="tiny"></span></div>
+        <div class="settings">
+          <div class="field">
+            <span class="field-label">Password length</span>
+            <div class="control-row">
+              <button id="lengthMinus" class="step-btn" type="button" aria-label="Decrease password length">−</button>
+              <span class="value-row"><input id="length" type="number" value="12" min="4" max="128" step="1" inputmode="numeric"><span class="unit">chars</span></span>
+              <button id="lengthPlus" class="step-btn" type="button" aria-label="Increase password length">+</button>
+            </div>
+          </div>
+
+          <label class="field switch-line">
+            <span class="field-label">Include uppercase</span>
+            <span class="toggle"><input id="upper" type="checkbox" checked><span class="track"></span></span>
+          </label>
+          <label class="field switch-line">
+            <span class="field-label">Include lowercase</span>
+            <span class="toggle"><input id="lower" type="checkbox" checked><span class="track"></span></span>
+          </label>
+          <label class="field switch-line">
+            <span class="field-label">Include numbers</span>
+            <span class="toggle"><input id="numbers" type="checkbox" checked><span class="track"></span></span>
+          </label>
+          <label class="field switch-line">
+            <span class="field-label">Include symbols</span>
+            <span class="toggle"><input id="symbols" type="checkbox"><span class="track"></span></span>
+          </label>
+        </div>
+      </section>
+
+      <section class="panel result-panel" aria-live="polite">
+        <div class="panel-head"><span class="label">Generated password</span><span class="tiny">LOCAL ONLY</span></div>
+        <div class="password-wrap">
+          <div id="password" class="password" role="textbox" aria-label="Generated password" tabindex="0"></div>
+          <div class="actions">
+            <button id="generate" class="primary" type="button">Generate password</button>
+            <button id="copy" class="secondary" type="button">Copy password</button>
+          </div>
+          <div id="status" class="status"></div>
+        </div>
+        <div class="note">Generated with the browser's cryptographic random number generator. The current password is retained only for this browser tab/session so it is still here when you return.</div>
+      </section>
+    </div>
+
+    <div class="foot">USEFUL TOOLS // PASSWORD GENERATOR</div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const SESSION_KEY = 'useful-tools-password-generator-session-v1';
+  const sets = {
+    upper:'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+    lower:'abcdefghijklmnopqrstuvwxyz',
+    numbers:'0123456789',
+    symbols:'!@#$%^&*()-_=+[]{};:,.?'
+  };
+
+  const $ = id => document.getElementById(id);
+  const controls = ['upper','lower','numbers','symbols'];
+
+  function secureIndex(max) {
+    if (!Number.isInteger(max) || max < 1) throw new Error('Invalid character pool');
+    const range = 0x100000000;
+    const limit = Math.floor(range / max) * max;
+    const buf = new Uint32Array(1);
+    let n;
+    do {
+      crypto.getRandomValues(buf);
+      n = buf[0];
+    } while (n >= limit);
+    return n % max;
+  }
+
+  function pick(chars) {
+    return chars[secureIndex(chars.length)];
+  }
+
+  function secureShuffle(items) {
+    for (let i = items.length - 1; i > 0; i--) {
+      const j = secureIndex(i + 1);
+      [items[i], items[j]] = [items[j], items[i]];
+    }
+    return items;
+  }
+
+  function selectedSets() {
+    return controls.filter(id => $(id).checked).map(id => sets[id]);
+  }
+
+  function readLength() {
+    let length = parseInt($('length').value, 10);
+    if (!Number.isFinite(length)) length = 12;
+    length = Math.max(4, Math.min(128, length));
+    $('length').value = length;
+    return length;
+  }
+
+  function saveSession() {
+    try {
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+        password:$('password').textContent,
+        length:readLength(),
+        upper:$('upper').checked,
+        lower:$('lower').checked,
+        numbers:$('numbers').checked,
+        symbols:$('symbols').checked
+      }));
+    } catch(e) {}
+  }
+
+  function updateSummary() {
+    const active = selectedSets();
+    const poolSize = active.reduce((sum, chars) => sum + chars.length, 0);
+    $('charSummary').textContent = active.length ? `${poolSize} CHAR POOL` : 'NO CHARACTER SETS';
+  }
+
+  function generate() {
+    const active = selectedSets();
+    if (!active.length) {
+      $('status').textContent = 'Select at least one character set';
+      return;
+    }
+
+    let length = readLength();
+    if (length < active.length) {
+      length = active.length;
+      $('length').value = length;
+    }
+
+    const pool = active.join('');
+    const chars = active.map(pick);
+    while (chars.length < length) chars.push(pick(pool));
+
+    $('password').textContent = secureShuffle(chars).join('');
+    $('status').textContent = '';
+    updateSummary();
+    saveSession();
+  }
+
+  async function copyPassword() {
+    const text = $('password').textContent;
+    if (!text) return;
+    let copied = false;
+
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        copied = true;
+      }
+    } catch(e) {}
+
+    if (!copied) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly','');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      ta.style.pointerEvents = 'none';
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, ta.value.length);
+      try { copied = document.execCommand('copy'); } catch(e) {}
+      ta.remove();
+    }
+
+    $('status').textContent = copied ? 'Copied to clipboard' : 'Copy failed';
+    clearTimeout(copyPassword.timer);
+    copyPassword.timer = setTimeout(() => $('status').textContent = '', 1600);
+  }
+
+  function adjustLength(delta) {
+    $('length').value = Math.max(4, Math.min(128, readLength() + delta));
+    saveSession();
+  }
+
+  function restore() {
+    let state = null;
+    try { state = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null'); } catch(e) {}
+
+    if (state && typeof state === 'object') {
+      $('length').value = Number.isFinite(Number(state.length)) ? state.length : 12;
+      controls.forEach(id => {
+        if (typeof state[id] === 'boolean') $(id).checked = state[id];
+      });
+      if (typeof state.password === 'string' && state.password) $('password').textContent = state.password;
+    }
+
+    updateSummary();
+    if (!$('password').textContent) generate();
+  }
+
+  $('generate').addEventListener('click', generate);
+  $('copy').addEventListener('click', copyPassword);
+  $('lengthMinus').addEventListener('click', () => adjustLength(-1));
+  $('lengthPlus').addEventListener('click', () => adjustLength(1));
+  $('length').addEventListener('change', saveSession);
+  controls.forEach(id => $(id).addEventListener('change', () => { updateSummary(); saveSession(); }));
+
+  restore();
+})();
+</script>
+<script src="../tools-menu.js"></script>
+</body>
+</html>
