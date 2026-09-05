@@ -16,6 +16,16 @@
     .tools-menu-link:hover,.tools-menu-link:focus-visible{background:#08100e;color:#8cd7ad;outline:none}
     .tools-menu-link[aria-current="page"]{color:#8cd7ad}
     .tools-menu-status{color:#789087;font-size:8px;font-weight:500}
+    .tools-menu-light{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif}
+    .tools-menu-light .tools-menu-btn{background:#f4f3ef;color:#797872;border-color:#d7d5ce}
+    .tools-menu-light .tools-menu-btn:hover,.tools-menu-light .tools-menu-btn:focus-visible{color:#151515;border-color:#151515}
+    .tools-menu-light .tools-menu-panel{background:#f4f3ef;border-color:#d7d5ce;box-shadow:0 10px 30px rgba(0,0,0,.10)}
+    .tools-menu-light .tools-menu-head{border-color:#d7d5ce;color:#797872}
+    .tools-menu-light .tools-menu-link{color:#151515;border-color:#e4e2dc;font-weight:600}
+    .tools-menu-light .tools-menu-link:hover,.tools-menu-light .tools-menu-link:focus-visible{background:#fff;color:#151515}
+    .tools-menu-light .tools-menu-link[aria-current="page"]{color:#151515;background:#fff}
+    .tools-menu-light .tools-menu-status{color:#9b9991}
+    .tools-menu-light~*{}
     @media(max-width:520px){.tools-menu-wrap{right:10px;bottom:10px}.tools-menu-panel{width:min(220px,calc(100vw - 20px))}}
   `;
   document.head.appendChild(style);
@@ -26,8 +36,14 @@
   const onRoot = !onPassword && !onPalette;
   const base = (onPassword || onPalette) ? '..' : '.';
 
+  if (onPalette) {
+    const paletteFix = document.createElement('style');
+    paletteFix.textContent = '.figure img{max-height:none!important;object-fit:initial!important}';
+    document.head.appendChild(paletteFix);
+  }
+
   const wrap = document.createElement('div');
-  wrap.className = 'tools-menu-wrap';
+  wrap.className = `tools-menu-wrap${onPalette ? ' tools-menu-light' : ''}`;
   wrap.innerHTML = `
     <div id="toolsMenuPanel" class="tools-menu-panel" aria-hidden="true">
       <div class="tools-menu-head">Tools</div>
