@@ -7,7 +7,18 @@
 <title>Adventure Awaits</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-:root{--paper:#f4f3ef;--ink:#151515;--muted:#7c7a73;--line:#d7d5ce;--white:#fff}
+:root{
+  --paper:#f4f3ef;
+  --ink:#151515;
+  --muted:#7c7a73;
+  --line:#d7d5ce;
+  --forest:#17382b;
+  --forest-deep:#10291f;
+  --purple:#a875d2;
+  --purple-light:#c8a3e8;
+  --orange:#ef7d32;
+  --cream:#f3eadf;
+}
 *{box-sizing:border-box}
 html,body{width:100%;height:100%;overflow:hidden;background:var(--paper)}
 body{margin:0;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
@@ -23,15 +34,24 @@ button{font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .result{display:none;width:min(520px,100%);height:100%;grid-template-rows:minmax(54px,1fr) auto auto minmax(54px,1fr);align-items:center;justify-items:center}
 .result.ready{display:grid}
 .location{align-self:end;max-width:100%;margin:0 0 18px;text-align:center;font-size:clamp(18px,5vw,25px);font-weight:500;letter-spacing:-.035em;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.map-frame{position:relative;width:min(68vw,42vh,390px);aspect-ratio:1;border-radius:50%;overflow:hidden;background:#e7e6e1;border:1px solid var(--line);isolation:isolate}
-#map{position:absolute;inset:0;width:100%;height:100%;filter:grayscale(1) saturate(.2) contrast(.92) brightness(1.04)}
-.map-frame::after{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(21,21,21,.06);pointer-events:none;z-index:500}
+.map-frame{position:relative;width:min(68vw,42vh,390px);aspect-ratio:1;border-radius:50%;overflow:hidden;background:var(--forest);border:1px solid #274d3d;isolation:isolate}
+#map{position:absolute;inset:0;width:100%;height:100%;background:var(--forest)}
+.map-frame::after{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(244,243,239,.08),inset 0 0 46px rgba(4,19,13,.18);pointer-events:none;z-index:700}
+.leaflet-container{background:var(--forest);font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif}
+.leaflet-tile-pane{filter:grayscale(1) sepia(1) hue-rotate(82deg) saturate(1.7) brightness(.42) contrast(1.28);opacity:.52}
 .leaflet-control-zoom{display:none}
-.leaflet-control-attribution{margin:0 50px 7px!important;padding:2px 5px!important;background:rgba(244,243,239,.78)!important;color:#67655f!important;font:7px/1.2 -apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif!important;white-space:nowrap;border-radius:2px}
-.leaflet-control-attribution a{color:#44423e!important;text-decoration:none}
+.leaflet-control-attribution{margin:0 52px 7px!important;padding:2px 5px!important;background:rgba(16,41,31,.76)!important;color:rgba(244,243,239,.62)!important;font:7px/1.2 -apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif!important;white-space:nowrap;border-radius:2px}
+.leaflet-control-attribution a{color:rgba(244,243,239,.78)!important;text-decoration:none}
+.map-pin-wrap{background:transparent!important;border:0!important}
+.map-pin{display:block;width:30px;height:39px;filter:drop-shadow(0 3px 4px rgba(0,0,0,.34))}
+.map-pin svg{display:block;width:100%;height:100%;overflow:visible}
+.map-pin .pin-body{stroke:var(--cream);stroke-width:1.7}
+.map-pin .pin-core{fill:var(--cream)}
+.map-pin.user .pin-body{fill:var(--orange)}
+.map-pin.foot .pin-body{fill:var(--purple)}
 .stats{width:min(420px,88vw);display:grid;grid-template-columns:1fr 1fr;margin-top:22px;font-family:Georgia,"Times New Roman",serif}
 .stat{min-width:0;padding:1px 18px;text-align:center}
-.stat+ .stat{border-left:1px solid var(--line)}
+.stat+.stat{border-left:1px solid var(--line)}
 .stat-value{display:block;font-size:clamp(25px,7vw,34px);line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
 .stat-label{display:block;margin-top:8px;color:var(--muted);font-size:11px;line-height:1.25;font-style:italic}
 .retry{align-self:start;margin-top:18px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--muted);padding:0 0 2px;font-size:9px;font-weight:600;letter-spacing:.11em;text-transform:uppercase}
@@ -79,7 +99,8 @@ button{font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
   const locationEl=$('location'),distanceEl=$('distance'),hoursEl=$('hours'),retry=$('retry');
   const OVERPASS_ENDPOINTS=['https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter'];
   const RADII=[1200,3500,8000];
-  let map=null,pathLayer=null,userLayer=null,footLayer=null;
+  const NETWORK_TYPES='motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service|pedestrian|track|cycleway|bridleway|path|footway|steps';
+  let map=null,networkLayer=null,adventureToken=0;
 
   const toRad=d=>d*Math.PI/180;
   const toDeg=r=>r*180/Math.PI;
@@ -115,8 +136,7 @@ button{font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
     return best;
   }
 
-  async function queryOverpass(lat,lon,radius){
-    const query=`[out:json][timeout:18];\n(\n  way(around:${radius},${lat},${lon})["highway"~"^(path|footway)$"]["access"!~"^(private|no)$"]["footway"!~"^(sidewalk|crossing)$"];\n  way(around:${radius},${lat},${lon})["designation"~"^(public_footpath|public_bridleway|restricted_byway)$"]["access"!~"^(private|no)$"];\n);\nout tags geom;`;
+  async function requestOverpass(query){
     let lastError=null;
     for(const endpoint of OVERPASS_ENDPOINTS){
       try{
@@ -128,9 +148,14 @@ button{font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
     throw lastError||new Error('Map service unavailable');
   }
 
+  async function queryFootpaths(lat,lon,radius){
+    const query=`[out:json][timeout:18];\n(\n  way(around:${radius},${lat},${lon})["highway"~"^(path|footway)$"]["access"!~"^(private|no)$"]["footway"!~"^(sidewalk|crossing)$"];\n  way(around:${radius},${lat},${lon})["designation"~"^(public_footpath|public_bridleway|restricted_byway)$"]["access"!~"^(private|no)$"];\n);\nout tags geom;`;
+    return requestOverpass(query);
+  }
+
   async function findFootpath(lat,lon){
     for(const radius of RADII){
-      const data=await queryOverpass(lat,lon,radius);
+      const data=await queryFootpaths(lat,lon,radius);
       const ways=(data.elements||[]).filter(el=>Array.isArray(el.geometry)&&el.geometry.length);
       if(!ways.length) continue;
       let best=null;
@@ -141,6 +166,14 @@ button{font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
       if(best) return best;
     }
     throw new Error('No mapped footpath was found within 8 km of your location.');
+  }
+
+  async function queryNetwork(lat,lon,foot){
+    const midLat=(lat+foot.lat)/2,midLon=(lon+foot.lon)/2;
+    const radius=Math.round(Math.min(2200,Math.max(700,foot.distance*.75+700)));
+    const query=`[out:json][timeout:18];\nway(around:${radius},${midLat},${midLon})["highway"~"^(${NETWORK_TYPES})$"];\nout tags geom;`;
+    const data=await requestOverpass(query);
+    return (data.elements||[]).filter(el=>Array.isArray(el.geometry)&&el.geometry.length);
   }
 
   async function reverseGeocode(lat,lon){
@@ -167,26 +200,78 @@ button{font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
     });
   }
 
+  function makePin(type,label){
+    return L.divIcon({
+      className:'map-pin-wrap',
+      html:`<span class="map-pin ${type}" role="img" aria-label="${label}"><svg viewBox="0 0 30 39" aria-hidden="true"><path class="pin-body" d="M15 1.5C7.55 1.5 1.5 7.55 1.5 15c0 10.45 13.5 22.5 13.5 22.5S28.5 25.45 28.5 15C28.5 7.55 22.45 1.5 15 1.5Z"/><circle class="pin-core" cx="15" cy="14.8" r="4.7"/></svg></span>`,
+      iconSize:[30,39],
+      iconAnchor:[15,37]
+    });
+  }
+
+  function roadStyle(way){
+    const type=(way.tags&&way.tags.highway)||'';
+    const isPath=/^(path|footway|steps|bridleway|cycleway|track)$/.test(type);
+    const isMajor=/^(motorway|trunk|primary|secondary)$/.test(type);
+    return {
+      color:isPath?'#c8a3e8':'#a875d2',
+      weight:isMajor?2.7:(isPath?1.8:2.2),
+      opacity:isPath?.82:.68,
+      lineCap:'round',
+      lineJoin:'round',
+      pane:'networkPane',
+      interactive:false
+    };
+  }
+
+  function renderNetwork(ways){
+    if(!map) return;
+    if(networkLayer) networkLayer.clearLayers();
+    networkLayer=L.layerGroup().addTo(map);
+    for(const way of ways){
+      const coords=way.geometry.map(p=>[p.lat,p.lon]);
+      L.polyline(coords,roadStyle(way)).addTo(networkLayer);
+    }
+  }
+
   function renderMap(lat,lon,foot){
     if(map){map.remove();map=null}
+    networkLayer=null;
     map=L.map('map',{zoomControl:false,attributionControl:true,dragging:true,tap:true,scrollWheelZoom:false,doubleClickZoom:false,boxZoom:false,keyboard:false});
+    map.createPane('networkPane');map.getPane('networkPane').style.zIndex='410';
+    map.createPane('connectorPane');map.getPane('connectorPane').style.zIndex='425';
+    map.createPane('selectedPane');map.getPane('selectedPane').style.zIndex='440';
+
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
+
+    L.polyline([[lat,lon],[foot.lat,foot.lon]],{
+      color:'#f3eadf',weight:2.4,opacity:.92,dashArray:'2 9',lineCap:'round',pane:'connectorPane',interactive:false
+    }).addTo(map);
+
     const geometry=foot.way.geometry.map(p=>[p.lat,p.lon]);
-    pathLayer=L.polyline(geometry,{color:'#151515',weight:4,opacity:.82,lineCap:'round'}).addTo(map);
-    userLayer=L.circleMarker([lat,lon],{radius:5,color:'#151515',weight:2,fillColor:'#f4f3ef',fillOpacity:1}).addTo(map);
-    footLayer=L.circleMarker([foot.lat,foot.lon],{radius:7,color:'#f4f3ef',weight:2,fillColor:'#151515',fillOpacity:1}).addTo(map);
+    L.polyline(geometry,{color:'#5e3f73',weight:7,opacity:.58,lineCap:'round',lineJoin:'round',pane:'selectedPane',interactive:false}).addTo(map);
+    L.polyline(geometry,{color:'#b985e1',weight:4.2,opacity:1,lineCap:'round',lineJoin:'round',pane:'selectedPane',interactive:false}).addTo(map);
+
+    L.marker([lat,lon],{icon:makePin('user','Your location'),zIndexOffset:1000}).addTo(map);
+    L.marker([foot.lat,foot.lon],{icon:makePin('foot','Nearest footpath'),zIndexOffset:1000}).addTo(map);
+
     const bounds=L.latLngBounds([[lat,lon],[foot.lat,foot.lon]]);
-    if(foot.distance<60) map.setView([foot.lat,foot.lon],17);
-    else map.fitBounds(bounds,{padding:[54,54],maxZoom:16});
+    if(foot.distance<60){
+      map.setView([(lat+foot.lat)/2,(lon+foot.lon)/2],17);
+    }else{
+      map.fitBounds(bounds,{padding:[62,62],maxZoom:16});
+    }
     setTimeout(()=>map.invalidateSize(),60);
   }
 
   async function runAdventure(){
+    const token=++adventureToken;
     error.classList.remove('show');error.textContent='';button.disabled=true;button.textContent='finding adventure…';
     try{
       const position=await getPosition();
       const {latitude:lat,longitude:lon}=position.coords;
       const [placeResult,footResult]=await Promise.allSettled([reverseGeocode(lat,lon),findFootpath(lat,lon)]);
+      if(token!==adventureToken) return;
       if(footResult.status==='rejected') throw footResult.reason;
       const foot=footResult.value;
       const place=placeResult.status==='fulfilled'?placeResult.value:`${lat.toFixed(4)}, ${lon.toFixed(4)}`;
@@ -195,7 +280,12 @@ button{font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
       hoursEl.textContent=randomAdventureHours();
       start.style.display='none';result.classList.add('ready');
       requestAnimationFrame(()=>renderMap(lat,lon,foot));
+
+      queryNetwork(lat,lon,foot).then(ways=>{
+        if(token===adventureToken) renderNetwork(ways);
+      }).catch(()=>{});
     }catch(err){
+      if(token!==adventureToken) return;
       error.textContent=err&&err.message?err.message:'Adventure failed to materialise. Try again.';
       error.classList.add('show');button.disabled=false;button.textContent='press for adventure';
     }
@@ -203,6 +293,7 @@ button{font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
 
   button.addEventListener('click',runAdventure);
   retry.addEventListener('click',()=>{
+    ++adventureToken;
     result.classList.remove('ready');start.style.display='grid';button.disabled=false;button.textContent='press for adventure';
     if(map){map.remove();map=null}
     runAdventure();
