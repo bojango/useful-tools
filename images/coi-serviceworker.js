@@ -1,10 +1,14 @@
 /* Cross-origin isolation for the image compressor, plus same-origin proxying of LibRaw assets. */
 const LIBRAW_BASE='https://cdn.jsdelivr.net/npm/libraw-wasm@1.6.0/dist/';
-const VENDOR_CACHE='useful-tools-image-vendor-v1';
+const VENDOR_CACHE='useful-tools-image-vendor-v2';
+const VENDOR_FILES=new Set(['index.js','worker.js','libraw.js','libraw.wasm']);
 
 if(typeof window==='undefined'){
   self.addEventListener('install',()=>self.skipWaiting());
-  self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));
+  self.addEventListener('activate',event=>event.waitUntil(
+    caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('useful-tools-image-vendor-')&&key!==VENDOR_CACHE).map(key=>caches.delete(key))))
+      .then(()=>self.clients.claim())
+  ));
 
   function isolatedResponse(response){
     if(!response||response.status===0)return response;
@@ -41,7 +45,7 @@ if(typeof window==='undefined'){
     const vendorPrefix=`${scopePath}/vendor/`;
     if(url.origin===self.location.origin&&url.pathname.startsWith(vendorPrefix)){
       const filename=url.pathname.slice(vendorPrefix.length);
-      if(filename==='libraw.js'||filename==='libraw.wasm'){
+      if(VENDOR_FILES.has(filename)){
         event.respondWith(vendorResponse(filename).catch(error=>new Response(String(error),{status:502,headers:{'Content-Type':'text/plain'}})));
         return;
       }
@@ -64,13 +68,11 @@ if(typeof window==='undefined'){
       location.reload();
     };
     navigator.serviceWorker.register(scriptURL,{scope:'./'}).then(registration=>{
+      navigator.serviceWorker.addEventListener('controllerchange',()=>reloadOnce(),{once:true});
       if(controllerIsOurs()){
         sessionStorage.removeItem(reloadKey);
         return;
       }
-      navigator.serviceWorker.addEventListener('controllerchange',()=>{
-        if(controllerIsOurs())reloadOnce();
-      });
       if(registration.active)reloadOnce();
     }).catch(error=>console.error('Image compressor isolation worker failed:',error));
   })();
