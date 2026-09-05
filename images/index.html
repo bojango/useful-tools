@@ -24,6 +24,7 @@
 <section id="overallPanel" class="panel" hidden><div class="panel-head"><span class="label">Overall progress</span><span id="overallPercent" class="tiny">0%</span></div><div class="overall"><div class="progress-meta"><span id="overallState" class="tiny">QUEUED</span><span id="overallDone" class="tiny">0 / 0</span></div><div class="progress-track"><div id="overallBar" class="progress-fill"></div></div><div class="summary"><div class="stat"><div class="stat-k">Original</div><div id="totalOriginal" class="stat-v">0 B</div></div><div class="stat"><div class="stat-k">Compressed</div><div id="totalNew" class="stat-v">—</div></div><div class="stat"><div class="stat-k">Saved</div><div id="totalSaved" class="stat-v">—</div></div></div></div><div class="actions" style="grid-template-columns:1fr"><button id="downloadAll" class="secondary" type="button" disabled>Download all as ZIP</button></div></section>
 <section id="queuePanel" class="panel" hidden><div class="panel-head"><span class="label">Files</span><span id="completedCount" class="tiny">0 COMPLETE</span></div><div id="queue" class="queue"></div></section>
 </div><div id="globalStatus" class="status"></div><div class="foot">USEFUL TOOLS // IMAGE COMPRESSOR</div></div></div>
+<script src="./coi-serviceworker.js"></script>
 <script type="module" src="./app.js"></script>
 <script src="../tools-menu.js"></script>
 </body>
