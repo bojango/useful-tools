@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f4f3ef">
+<title>Adventure Awaits</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--paper:#f4f3ef;--ink:#151515;--muted:#7c7a73;--line:#d7d5ce;--white:#fff}
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--paper)}
+body{margin:0;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.shell{height:100dvh;min-height:100%;display:grid;place-items:center;padding:max(18px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left))}
+.start{display:grid;place-items:center;text-align:center}
+.adventure-btn{min-height:50px;padding:0 24px;border:1px solid var(--ink);background:var(--ink);color:var(--paper);font-size:12px;font-weight:600;letter-spacing:.015em;transition:background .16s,color .16s,opacity .16s}
+.adventure-btn:hover{background:transparent;color:var(--ink)}
+.adventure-btn:disabled{cursor:wait;opacity:.52}
+.adventure-btn:focus-visible,.retry:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.error{display:none;max-width:320px;margin:14px auto 0;color:var(--muted);font-size:11px;line-height:1.5}
+.error.show{display:block}
+.result{display:none;width:min(520px,100%);height:100%;grid-template-rows:minmax(54px,1fr) auto auto minmax(54px,1fr);align-items:center;justify-items:center}
+.result.ready{display:grid}
+.location{align-self:end;max-width:100%;margin:0 0 18px;text-align:center;font-size:clamp(18px,5vw,25px);font-weight:500;letter-spacing:-.035em;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.map-frame{position:relative;width:min(68vw,42vh,390px);aspect-ratio:1;border-radius:50%;overflow:hidden;background:#e7e6e1;border:1px solid var(--line);isolation:isolate}
+#map{position:absolute;inset:0;width:100%;height:100%;filter:grayscale(1) saturate(.2) contrast(.92) brightness(1.04)}
+.map-frame::after{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(21,21,21,.06);pointer-events:none;z-index:500}
+.leaflet-control-zoom{display:none}
+.leaflet-control-attribution{margin:0 50px 7px!important;padding:2px 5px!important;background:rgba(244,243,239,.78)!important;color:#67655f!important;font:7px/1.2 -apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif!important;white-space:nowrap;border-radius:2px}
+.leaflet-control-attribution a{color:#44423e!important;text-decoration:none}
+.stats{width:min(420px,88vw);display:grid;grid-template-columns:1fr 1fr;margin-top:22px;font-family:Georgia,"Times New Roman",serif}
+.stat{min-width:0;padding:1px 18px;text-align:center}
+.stat+ .stat{border-left:1px solid var(--line)}
+.stat-value{display:block;font-size:clamp(25px,7vw,34px);line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.stat-label{display:block;margin-top:8px;color:var(--muted);font-size:11px;line-height:1.25;font-style:italic}
+.retry{align-self:start;margin-top:18px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--muted);padding:0 0 2px;font-size:9px;font-weight:600;letter-spacing:.11em;text-transform:uppercase}
+.retry:hover{color:var(--ink);border-color:var(--ink)}
+@media(max-height:700px){
+  .result{grid-template-rows:minmax(38px,1fr) auto auto minmax(38px,1fr)}
+  .location{margin-bottom:12px}.map-frame{width:min(62vw,40vh,330px)}.stats{margin-top:16px}.stat-label{margin-top:5px}.retry{margin-top:12px}
+}
+@media(max-width:430px){
+  .map-frame{width:min(76vw,42vh,340px)}.stats{width:92vw}.stat{padding:1px 12px}.location{max-width:92vw}
+}
+</style>
+</head>
+<body>
+<main class="shell">
+  <section id="start" class="start">
+    <button id="adventureButton" class="adventure-btn" type="button">press for adventure</button>
+    <p id="error" class="error" role="alert"></p>
+  </section>
+
+  <section id="result" class="result" aria-live="polite">
+    <h1 id="location" class="location">Somewhere nearby</h1>
+    <div class="map-frame" aria-label="Map showing your location and the closest mapped footpath">
+      <div id="map"></div>
+    </div>
+    <div class="stats">
+      <div class="stat">
+        <span id="distance" class="stat-value">—</span>
+        <span class="stat-label">distance to footpath</span>
+      </div>
+      <div class="stat">
+        <span id="hours" class="stat-value">—</span>
+        <span class="stat-label">approx. hours of adventure</span>
+      </div>
+    </div>
+    <button id="retry" class="retry" type="button">find another</button>
+  </section>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(() => {
+  const $=id=>document.getElementById(id);
+  const start=$('start'),result=$('result'),button=$('adventureButton'),error=$('error');
+  const locationEl=$('location'),distanceEl=$('distance'),hoursEl=$('hours'),retry=$('retry');
+  const OVERPASS_ENDPOINTS=['https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter'];
+  const RADII=[1200,3500,8000];
+  let map=null,pathLayer=null,userLayer=null,footLayer=null;
+
+  const toRad=d=>d*Math.PI/180;
+  const toDeg=r=>r*180/Math.PI;
+
+  function formatDistance(m){
+    if(m<1000) return `${Math.max(1,Math.round(m/10)*10)} m`;
+    return `${(m/1000).toFixed(m<10000?1:0)} km`;
+  }
+
+  function randomAdventureHours(){
+    const halves=Math.floor(Math.random()*13)+4;
+    const value=halves/2;
+    return Number.isInteger(value)?`${value}`:`${value.toFixed(1)}`;
+  }
+
+  function closestPointOnGeometry(lat,lon,geometry){
+    const R=6371000;
+    const cosLat=Math.max(.01,Math.cos(toRad(lat)));
+    let best={distance:Infinity,lat:null,lon:null};
+    const project=p=>({x:toRad(p.lon-lon)*R*cosLat,y:toRad(p.lat-lat)*R});
+    const unproject=(x,y)=>({lat:lat+toDeg(y/R),lon:lon+toDeg(x/(R*cosLat))});
+    for(let i=0;i<geometry.length-1;i++){
+      const a=project(geometry[i]),b=project(geometry[i+1]);
+      const dx=b.x-a.x,dy=b.y-a.y,len2=dx*dx+dy*dy;
+      const t=len2?Math.max(0,Math.min(1,-(a.x*dx+a.y*dy)/len2)):0;
+      const x=a.x+t*dx,y=a.y+t*dy,d=Math.hypot(x,y);
+      if(d<best.distance){const p=unproject(x,y);best={distance:d,lat:p.lat,lon:p.lon}}
+    }
+    if(geometry.length===1){
+      const p=project(geometry[0]),d=Math.hypot(p.x,p.y);
+      best={distance:d,lat:geometry[0].lat,lon:geometry[0].lon};
+    }
+    return best;
+  }
+
+  async function queryOverpass(lat,lon,radius){
+    const query=`[out:json][timeout:18];\n(\n  way(around:${radius},${lat},${lon})["highway"~"^(path|footway)$"]["access"!~"^(private|no)$"]["footway"!~"^(sidewalk|crossing)$"];\n  way(around:${radius},${lat},${lon})["designation"~"^(public_footpath|public_bridleway|restricted_byway)$"]["access"!~"^(private|no)$"];\n);\nout tags geom;`;
+    let lastError=null;
+    for(const endpoint of OVERPASS_ENDPOINTS){
+      try{
+        const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:new URLSearchParams({data:query})});
+        if(!response.ok) throw new Error(`Map service returned ${response.status}`);
+        return await response.json();
+      }catch(err){lastError=err}
+    }
+    throw lastError||new Error('Map service unavailable');
+  }
+
+  async function findFootpath(lat,lon){
+    for(const radius of RADII){
+      const data=await queryOverpass(lat,lon,radius);
+      const ways=(data.elements||[]).filter(el=>Array.isArray(el.geometry)&&el.geometry.length);
+      if(!ways.length) continue;
+      let best=null;
+      for(const way of ways){
+        const point=closestPointOnGeometry(lat,lon,way.geometry);
+        if(!best||point.distance<best.distance) best={...point,way};
+      }
+      if(best) return best;
+    }
+    throw new Error('No mapped footpath was found within 8 km of your location.');
+  }
+
+  async function reverseGeocode(lat,lon){
+    const url=new URL('https://nominatim.openstreetmap.org/reverse');
+    url.search=new URLSearchParams({format:'jsonv2',lat:String(lat),lon:String(lon),zoom:'10',addressdetails:'1'}).toString();
+    const response=await fetch(url);
+    if(!response.ok) throw new Error('Location naming unavailable');
+    const data=await response.json();
+    const a=data.address||{};
+    const place=a.city||a.town||a.village||a.hamlet||a.municipality||a.suburb||a.county||data.name;
+    const region=a.county||a.state||a.state_district;
+    if(place&&region&&place.toLowerCase()!==region.toLowerCase()) return `${place}, ${region}`;
+    return place||region||a.country||`${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+  }
+
+  function getPosition(){
+    return new Promise((resolve,reject)=>{
+      if(!navigator.geolocation){reject(new Error('This browser does not support GPS location.'));return}
+      navigator.geolocation.getCurrentPosition(resolve,err=>{
+        if(err.code===1) reject(new Error('Location permission is needed to find your adventure.'));
+        else if(err.code===2) reject(new Error('Your location could not be determined. Try again somewhere with a clearer GPS signal.'));
+        else reject(new Error('Location timed out. Try again.'));
+      },{enableHighAccuracy:true,timeout:15000,maximumAge:60000});
+    });
+  }
+
+  function renderMap(lat,lon,foot){
+    if(map){map.remove();map=null}
+    map=L.map('map',{zoomControl:false,attributionControl:true,dragging:true,tap:true,scrollWheelZoom:false,doubleClickZoom:false,boxZoom:false,keyboard:false});
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
+    const geometry=foot.way.geometry.map(p=>[p.lat,p.lon]);
+    pathLayer=L.polyline(geometry,{color:'#151515',weight:4,opacity:.82,lineCap:'round'}).addTo(map);
+    userLayer=L.circleMarker([lat,lon],{radius:5,color:'#151515',weight:2,fillColor:'#f4f3ef',fillOpacity:1}).addTo(map);
+    footLayer=L.circleMarker([foot.lat,foot.lon],{radius:7,color:'#f4f3ef',weight:2,fillColor:'#151515',fillOpacity:1}).addTo(map);
+    const bounds=L.latLngBounds([[lat,lon],[foot.lat,foot.lon]]);
+    if(foot.distance<60) map.setView([foot.lat,foot.lon],17);
+    else map.fitBounds(bounds,{padding:[54,54],maxZoom:16});
+    setTimeout(()=>map.invalidateSize(),60);
+  }
+
+  async function runAdventure(){
+    error.classList.remove('show');error.textContent='';button.disabled=true;button.textContent='finding adventure…';
+    try{
+      const position=await getPosition();
+      const {latitude:lat,longitude:lon}=position.coords;
+      const [placeResult,footResult]=await Promise.allSettled([reverseGeocode(lat,lon),findFootpath(lat,lon)]);
+      if(footResult.status==='rejected') throw footResult.reason;
+      const foot=footResult.value;
+      const place=placeResult.status==='fulfilled'?placeResult.value:`${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+      locationEl.textContent=place;
+      distanceEl.textContent=formatDistance(foot.distance);
+      hoursEl.textContent=randomAdventureHours();
+      start.style.display='none';result.classList.add('ready');
+      requestAnimationFrame(()=>renderMap(lat,lon,foot));
+    }catch(err){
+      error.textContent=err&&err.message?err.message:'Adventure failed to materialise. Try again.';
+      error.classList.add('show');button.disabled=false;button.textContent='press for adventure';
+    }
+  }
+
+  button.addEventListener('click',runAdventure);
+  retry.addEventListener('click',()=>{
+    result.classList.remove('ready');start.style.display='grid';button.disabled=false;button.textContent='press for adventure';
+    if(map){map.remove();map=null}
+    runAdventure();
+  });
+
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('../sw.js').catch(()=>{});
+})();
+</script>
+<script src="../tools-menu.js"></script>
+</body>
+</html>
