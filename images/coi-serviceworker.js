@@ -54,23 +54,35 @@ if(typeof window==='undefined'){
   });
 }else{
   (()=>{
+    if(!window.isSecureContext||!('serviceWorker' in navigator))return;
     const reloadKey='usefulToolsImageCoiReload';
-    if(window.crossOriginIsolated){
-      sessionStorage.removeItem(reloadKey);
-      return;
-    }
-    if(window.crossOriginIsolated!==false||!window.isSecureContext||!('serviceWorker' in navigator))return;
     const scriptURL=new URL(document.currentScript.src,location.href).href;
-    const controllerIsOurs=()=>navigator.serviceWorker.controller?.scriptURL===scriptURL;
     const reloadOnce=()=>{
       if(sessionStorage.getItem(reloadKey)==='1')return;
       sessionStorage.setItem(reloadKey,'1');
       location.reload();
     };
+
+    if(window.crossOriginIsolated){
+      sessionStorage.removeItem(reloadKey);
+      navigator.serviceWorker.getRegistration('./').then(async registration=>{
+        if(!registration){
+          await navigator.serviceWorker.register(scriptURL,{scope:'./'});
+          return;
+        }
+        navigator.serviceWorker.addEventListener('controllerchange',()=>reloadOnce(),{once:true});
+        await registration.update();
+      }).catch(error=>console.error('Image compressor isolation worker update failed:',error));
+      return;
+    }
+
+    if(window.crossOriginIsolated!==false)return;
+    const controllerIsOurs=()=>navigator.serviceWorker.controller?.scriptURL===scriptURL;
     navigator.serviceWorker.register(scriptURL,{scope:'./'}).then(registration=>{
       navigator.serviceWorker.addEventListener('controllerchange',()=>reloadOnce(),{once:true});
       if(controllerIsOurs()){
         sessionStorage.removeItem(reloadKey);
+        registration.update().catch(()=>{});
         return;
       }
       if(registration.active)reloadOnce();
