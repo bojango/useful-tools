@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#070c0b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Terminal Photo FX</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div id="app"><div class="shell">
+  <div class="title">TERMINAL PHOTO FX</div>
+  <div class="subtitle"><span>BITMAP SIGNAL PROCESSOR</span><span id="topStatus">READY</span></div>
+  <div class="main">
+    <div class="column">
+      <section class="panel">
+        <div class="panel-head"><span class="label">Input source</span><span id="fileStatus" class="tiny">NO SIGNAL</span></div>
+        <div id="dropZone" class="drop" role="button" tabindex="0" aria-label="Choose a photo">
+          <div><div class="drop-title">Load bitmap</div><div class="drop-sub">Choose a photo · drag file here · or paste from clipboard</div></div>
+        </div>
+        <input id="fileInput" class="hidden-input" type="file" accept="image/*,.heic,.heif">
+        <div class="upload-actions"><button id="chooseBtn" class="secondary" type="button">Choose photo</button><button id="clearBtn" class="secondary subtle" type="button" disabled>Clear</button></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><span class="label">System config</span><span id="renderStatus" class="tiny">IDLE</span></div>
+        <div class="settings">
+          <div class="field"><label class="field-label" for="palette">Display mode (palette)</label><select id="palette" class="select">
+            <option value="termgreen">Termgreen</option><option value="amber">Amber CRT</option><option value="ice">Ice blue</option><option value="paper">Paperwhite</option><option value="gameboy">Game Boy</option><option value="cga">CGA</option><option value="red">Red alert</option><option value="violet">Violet</option>
+          </select><div id="paletteStrip" class="palette-strip" aria-hidden="true"></div></div>
+          <div class="field"><label class="field-label" for="dither">Signal noise (dither)</label><select id="dither" class="select">
+            <option value="ordered">Ordered</option><option value="floyd">Floyd–Steinberg</option><option value="atkinson">Atkinson</option><option value="threshold">Threshold</option><option value="random">Random noise</option><option value="none">None</option>
+          </select></div>
+          <div class="field"><label class="field-label" for="pixelSize">Resolution downscale</label><div class="range-row"><input id="pixelSize" type="range" min="1" max="24" value="4" step="1"><span id="pixelSizeValue" class="range-value">4px</span></div></div>
+          <div class="field"><label class="field-label" for="brightness">Signal gain (bright)</label><div class="range-row"><input id="brightness" type="range" min="-100" max="100" value="0" step="1"><span id="brightnessValue" class="range-value">0</span></div></div>
+          <div class="field"><label class="field-label" for="contrast">Contrast</label><div class="range-row"><input id="contrast" type="range" min="-100" max="100" value="0" step="1"><span id="contrastValue" class="range-value">0</span></div></div>
+          <details class="advanced"><summary>Advanced signal controls</summary><div class="advanced-body">
+            <div class="field"><label class="field-label" for="levels">Tonal levels</label><select id="levels" class="select"><option value="2">2 levels</option><option value="3">3 levels</option><option value="4" selected>4 levels</option></select></div>
+            <div class="field"><label class="field-label" for="ditherStrength">Dither strength</label><div class="range-row"><input id="ditherStrength" type="range" min="0" max="150" value="85" step="1"><span id="ditherStrengthValue" class="range-value">85%</span></div></div>
+            <div class="field"><label class="field-label" for="gamma">Gamma</label><div class="range-row"><input id="gamma" type="range" min="50" max="200" value="100" step="1"><span id="gammaValue" class="range-value">1.00</span></div></div>
+            <label class="field switch-line"><span class="field-label">Invert signal</span><span class="toggle"><input id="invert" type="checkbox"><span class="track"></span></span></label>
+            <div class="field"><label class="field-label" for="scanlines">Scanlines</label><div class="range-row"><input id="scanlines" type="range" min="0" max="100" value="0" step="1"><span id="scanlinesValue" class="range-value">0%</span></div></div>
+            <div class="field"><label class="field-label" for="vignette">Vignette</label><div class="range-row"><input id="vignette" type="range" min="0" max="100" value="0" step="1"><span id="vignetteValue" class="range-value">0%</span></div></div>
+            <div class="field"><label class="field-label" for="exportSize">Output resolution</label><select id="exportSize" class="select"><option value="source">Original</option><option value="4096">4096px long edge</option><option value="2048" selected>2048px long edge</option><option value="1080">1080px long edge</option></select></div>
+            <div class="field switch-line"><span class="field-label">Processing</span><span class="tiny">LOCAL ONLY</span></div>
+          </div></details>
+        </div>
+        <div class="actions"><button id="saveBtn" class="primary" type="button" disabled>Save to disk</button><button id="randomBtn" class="secondary" type="button" disabled>Randomise</button><button id="resetBtn" class="secondary subtle" type="button">Reset controls</button></div>
+        <div id="status" class="status">Waiting for input stream.</div>
+      </section>
+    </div>
+
+    <div class="column">
+      <section class="panel preview-panel">
+        <div class="panel-head"><span class="label">Output monitor</span><span id="previewStatus" class="tiny">0×0</span></div>
+        <div class="preview-wrap">
+          <div id="previewStage" class="preview-stage">
+            <div id="noSignal" class="no-signal"><strong>NO SIGNAL</strong><span>Waiting for input stream…</span></div>
+            <img id="originalPreview" class="preview-original" alt="Original photo preview" hidden>
+            <canvas id="outputCanvas" hidden></canvas>
+          </div>
+          <div class="preview-meta"><div class="meta-cell"><div class="meta-k">Source</div><div id="sourceMeta" class="meta-v">—</div></div><div class="meta-cell"><div class="meta-k">Output</div><div id="outputMeta" class="meta-v">—</div></div><div class="meta-cell"><div class="meta-k">Palette</div><div id="paletteMeta" class="meta-v">TERMGREEN</div></div></div>
+          <div class="preview-actions"><button id="compareBtn" class="secondary" type="button" disabled>Hold for original</button><button id="replaceBtn" class="secondary" type="button">Replace photo</button></div>
+        </div>
+      </section>
+    </div>
+  </div>
+  <div class="foot">Photos are processed entirely in your browser. Nothing is uploaded.</div>
+</div></div>
+<script src="./app.js"></script>
+<script src="../tools-menu.js"></script>
+</body>
+</html>
