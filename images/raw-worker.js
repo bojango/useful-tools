@@ -1,4 +1,4 @@
-import LibRawModule from 'https://cdn.jsdelivr.net/npm/libraw-wasm@1.6.0/libraw.js';
+import LibRawModule from 'https://cdn.jsdelivr.net/npm/libraw-wasm@1.6.0/dist/libraw.js';
 
 let ready;
 let raw;
