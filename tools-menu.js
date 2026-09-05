@@ -32,8 +32,9 @@
   const path = location.pathname.replace(/\/+$/, '');
   const onPassword = /\/password$/i.test(path);
   const onPalette = /\/palette$/i.test(path);
-  const onRoot = !onPassword && !onPalette;
-  const base = (onPassword || onPalette) ? '..' : '.';
+  const onImages = /\/images$/i.test(path);
+  const onRoot = !onPassword && !onPalette && !onImages;
+  const base = (onPassword || onPalette || onImages) ? '..' : '.';
 
   const wrap = document.createElement('div');
   wrap.className = `tools-menu-wrap${onPalette ? ' tools-menu-light' : ''}`;
@@ -48,6 +49,9 @@
       </a>
       <a class="tools-menu-link" href="${base}/palette/" ${onPalette ? 'aria-current="page"' : ''}>
         <span>Colour palette</span><span class="tools-menu-status">03</span>
+      </a>
+      <a class="tools-menu-link" href="${base}/images/" ${onImages ? 'aria-current="page"' : ''}>
+        <span>Image compressor</span><span class="tools-menu-status">04</span>
       </a>
     </div>
     <button id="toolsMenuButton" class="tools-menu-btn" type="button" aria-label="Open tools menu" aria-expanded="false" aria-controls="toolsMenuPanel">
