@@ -36,8 +36,9 @@
   const onTerminal = /\/terminalfx$/i.test(path);
   const onAdventure = /\/adventure$/i.test(path);
   const onNear = /\/near$/i.test(path);
-  const onRoot = !onPassword && !onPalette && !onImages && !onTerminal && !onAdventure && !onNear;
-  const base = (onPassword || onPalette || onImages || onTerminal || onAdventure || onNear) ? '..' : '.';
+  const onPace = /\/pace(?:\/index\.html)?$/i.test(path);
+  const onRoot = !onPassword && !onPalette && !onImages && !onTerminal && !onAdventure && !onNear && !onPace;
+  const base = (onPassword || onPalette || onImages || onTerminal || onAdventure || onNear || onPace) ? '..' : '.';
 
   const wrap = document.createElement('div');
   wrap.className = `tools-menu-wrap${(onPalette || onAdventure || onNear) ? ' tools-menu-light' : ''}`;
@@ -64,6 +65,9 @@
       </a>
       <a class="tools-menu-link" href="${base}/near/" ${onNear ? 'aria-current="page"' : ''}>
         <span>What's near</span><span class="tools-menu-status">07</span>
+      </a>
+      <a class="tools-menu-link" href="${base}/pace/" ${onPace ? 'aria-current="page"' : ''}>
+        <span>Running pace calculator</span><span class="tools-menu-status">08</span>
       </a>
     </div>
     <button id="toolsMenuButton" class="tools-menu-btn" type="button" aria-label="Open tools menu" aria-expanded="false" aria-controls="toolsMenuPanel">

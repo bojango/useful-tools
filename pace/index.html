@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#070c0b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Running Pace Calculator</title>
+<style>
+:root{--bg:#070c0b;--panel:#0b1210;--panel2:#08100e;--line:#263a34;--line2:#1f312c;--text:#e6eee9;--muted:#789087;--accent:#8cd7ad}
+*{box-sizing:border-box}
+html{background:#000;color-scheme:dark;touch-action:manipulation}
+body{margin:0;min-height:100vh;padding:10px 10px 72px;background:#000;color:var(--text);font-family:Menlo,Consolas,"SFMono-Regular",monospace;-webkit-font-smoothing:antialiased;touch-action:manipulation}
+button,input{font:inherit}
+button{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#app{width:min(100%,820px);margin:0 auto}
+.shell{border:1px solid var(--line);background:var(--bg);padding:10px}
+.title{border-bottom:1px solid var(--line);padding:3px 2px 11px;font-size:clamp(20px,4vw,28px);font-weight:900;line-height:1;letter-spacing:.055em}
+.main{display:grid;gap:9px;margin-top:10px}
+.panel{border:1px solid var(--line);background:var(--panel)}
+.panel-head{min-height:34px;display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid var(--line);padding:7px 11px}
+.label,.tiny{font-size:9px;line-height:1.2;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.tiny{font-size:8px}
+.result{padding:18px 12px 16px;text-align:center}
+.result-label{font-size:9px;text-transform:uppercase;letter-spacing:.16em;color:var(--accent)}
+.result-value{margin:10px 0 5px;font-size:clamp(42px,10vw,72px);line-height:1.04;font-weight:900;letter-spacing:-.055em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.result-unit{font-size:10px;color:var(--muted);letter-spacing:.09em;text-transform:uppercase}
+.result-note{margin:12px 0 0;min-height:16px;color:var(--muted);font-size:10px;line-height:1.45}
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--line)}
+.metric{min-width:0;padding:12px 8px;text-align:center}
+.metric+.metric{border-left:1px solid var(--line2)}
+.metric-value{display:block;font-size:clamp(13px,3.6vw,19px);font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.metric-label{display:block;margin-top:5px;color:var(--muted);font-size:8px;letter-spacing:.08em;text-transform:uppercase}
+.controls{padding:10px}
+.control-label{display:block;margin-bottom:8px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.mode-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.mode-btn,.unit-btn,.preset{border:1px solid var(--line);background:var(--panel2);color:var(--muted);min-height:40px;padding:8px 5px;font-size:10px;letter-spacing:.045em;font-weight:800}
+.mode-btn[aria-pressed="true"],.unit-btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.fields{display:grid;gap:0;padding:4px 11px 7px}
+.field{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:10px;align-items:center;min-height:65px;border-bottom:1px solid var(--line2)}
+.field:last-child{border-bottom:0}
+.field-label{display:block;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.field-help{display:block;margin-top:5px;font-size:8px;line-height:1.3;color:var(--muted)}
+.input-wrap{display:flex;align-items:center;gap:6px;justify-content:flex-end}
+.field-input{width:100%;min-width:0;min-height:44px;padding:5px 2px;border:0;border-bottom:1px solid var(--line);border-radius:0;outline:none;background:transparent;color:var(--text);text-align:right;font-size:clamp(19px,5vw,27px);font-weight:900;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.field-input:focus{border-color:var(--accent)}
+.field-input:disabled{color:var(--accent);opacity:1;-webkit-text-fill-color:var(--accent);border-bottom-color:transparent}
+.input-unit{width:36px;flex:0 0 36px;color:var(--muted);font-size:9px;text-transform:uppercase}
+.unit-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 11px;border-top:1px solid var(--line)}
+.unit-switch{display:grid;grid-template-columns:1fr 1fr;gap:4px;width:135px}
+.unit-btn{min-height:34px}
+.presets{padding:10px 11px;border-top:1px solid var(--line)}
+.preset-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+.preset{min-height:36px;font-size:9px}
+.preset:active{color:var(--accent);border-color:var(--accent)}
+.preset[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.note{padding:9px 11px;border-top:1px solid var(--line);font-size:9px;line-height:1.6;color:var(--muted)}
+.status{min-height:16px;padding:0 11px 10px;text-align:center;font-size:9px;line-height:1.35;color:var(--accent)}
+.status.error{color:#e2a18e}
+.foot{padding:8px 0 3px;text-align:center;font-size:8px;color:var(--muted)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media(min-width:680px){.shell{padding:12px}.main{grid-template-columns:1fr 1fr;gap:11px}.result-panel{align-self:start}.config{grid-column:1}.fields-panel{grid-column:2;grid-row:1/3}.result-panel{grid-column:1}.result{padding:24px 12px 23px}}
+@media(max-width:390px){body{padding:7px 7px 70px}.shell{padding:8px}.field{grid-template-columns:minmax(0,1fr) minmax(0,1.35fr)}.field-input{font-size:20px}.result-value{font-size:43px}.mode-btn{font-size:9px}}
+</style>
+</head>
+<body>
+<main id="app">
+<div class="shell">
+<h1 class="title">RUNNING PACE CALCULATOR</h1>
+<div class="main">
+<section class="panel result-panel" aria-label="Calculated result">
+<div class="panel-head"><span class="label">Calculated result</span><span class="tiny">LIVE</span></div>
+<div class="result">
+<div id="resultLabel" class="result-label">Finish time</div>
+<div id="resultValue" class="result-value" aria-live="polite">55:00</div>
+<div id="resultUnit" class="result-unit">hours : minutes : seconds</div>
+<p id="resultNote" class="result-note"></p>
+</div>
+<div class="metrics">
+<div class="metric"><span id="metricDistance" class="metric-value">10</span><span id="metricDistanceLabel" class="metric-label">Distance · km</span></div>
+<div class="metric"><span id="metricPace" class="metric-value">5:30</span><span id="metricPaceLabel" class="metric-label">Pace · /km</span></div>
+<div class="metric"><span id="metricTime" class="metric-value">55:00</span><span class="metric-label">Time</span></div>
+</div>
+</section>
+<section class="panel config">
+<div class="panel-head"><span class="label">Calculate</span><span class="tiny">CHOOSE OUTPUT</span></div>
+<div class="controls">
+<div class="mode-grid" role="group" aria-label="Value to calculate">
+<button class="mode-btn" type="button" data-solve="time" aria-pressed="true">Time</button>
+<button class="mode-btn" type="button" data-solve="pace" aria-pressed="false">Pace</button>
+<button class="mode-btn" type="button" data-solve="distance" aria-pressed="false">Distance</button>
+</div>
+</div>
+<div class="unit-bar"><span class="label">Distance units</span><div class="unit-switch" role="group" aria-label="Distance units"><button class="unit-btn" data-unit="km" type="button" aria-pressed="true">KM</button><button class="unit-btn" data-unit="mi" type="button" aria-pressed="false">MI</button></div></div>
+</section>
+<section class="panel fields-panel">
+<div class="panel-head"><span class="label">Run details</span><span class="tiny">EDIT TWO VALUES</span></div>
+<div class="fields">
+<label class="field"><span><span class="field-label">Distance</span><span class="field-help">Enter total distance</span></span><span class="input-wrap"><input class="field-input" id="distance" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="Distance"><span id="distanceUnit" class="input-unit">km</span></span></label>
+<label class="field"><span><span class="field-label">Pace</span><span class="field-help">Minutes : seconds</span></span><span class="input-wrap"><input class="field-input" id="pace" type="text" inputmode="text" autocomplete="off" spellcheck="false" aria-label="Pace in minutes and seconds"><span id="paceUnit" class="input-unit">/km</span></span></label>
+<label class="field"><span><span class="field-label">Time</span><span class="field-help">H:MM:SS or MM:SS</span></span><span class="input-wrap"><input class="field-input" id="time" type="text" inputmode="text" autocomplete="off" spellcheck="false" aria-label="Total run time"><span class="input-unit">h:m:s</span></span></label>
+</div>
+<div id="presets" class="presets">
+<span class="control-label">Race distances</span>
+<div class="preset-grid">
+<button class="preset" type="button" data-km="5" aria-pressed="false">5K</button>
+<button class="preset" type="button" data-km="10" aria-pressed="false">10K</button>
+<button class="preset" type="button" data-km="21.0975" aria-pressed="false">Half</button>
+<button class="preset" type="button" data-km="42.195" aria-pressed="false">Marathon</button>
+</div>
+</div>
+<div class="note">The highlighted field is calculated automatically. Choose Time, Pace or Distance above to change which value is calculated. All calculations are based on a constant average pace.</div>
+<p id="status" class="status" role="status"></p>
+</section>
+</div>
+<div class="foot">USEFUL TOOLS // RUNNING PACE CALCULATOR</div>
+</div>
+</main>
+<script>
+(() => {
+  'use strict';
+  const MILE_KM = 1.609344;
+  const STORAGE = 'useful-tools-running-pace-v1';
+  const $ = id => document.getElementById(id);
+  const fieldIds = ['distance','pace','time'];
+  const modes = {time:'Finish time',pace:'Average pace',distance:'Distance'};
+  const state = {solve:'time',unit:'km',distanceKm:10,paceSecondsKm:330,timeSeconds:3300};
+
+  function paceSeconds(text) {
+    const value = text.trim().replace(',', '.');
+    if (/^\d+(?:\.\d+)?$/.test(value)) return Number(value) * 60;
+    const m = value.match(/^(\d+):([0-5]\d)$/);
+    return m ? Number(m[1]) * 60 + Number(m[2]) : NaN;
+  }
+  function timeSeconds(text) {
+    const value = text.trim().replace(',', '.');
+    if (/^\d+(?:\.\d+)?$/.test(value)) return Number(value) * 60;
+    const parts = value.split(':');
+    if (parts.length === 2 && /^\d+$/.test(parts[0]) && /^[0-5]\d$/.test(parts[1])) {
+      return Number(parts[0]) * 60 + Number(parts[1]);
+    }
+    if (parts.length === 3 && /^\d+$/.test(parts[0]) && /^[0-5]\d$/.test(parts[1]) && /^[0-5]\d$/.test(parts[2])) {
+      return Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+    }
+    return NaN;
+  }
+  function duration(seconds) {
+    if (!Number.isFinite(seconds) || seconds <= 0) return '—';
+    const n = Math.round(seconds);
+    const hours = Math.floor(n / 3600);
+    const minutes = Math.floor((n % 3600) / 60);
+    const secs = String(n % 60).padStart(2,'0');
+    return hours ? hours + ':' + String(minutes).padStart(2,'0') + ':' + secs : minutes + ':' + secs;
+  }
+  function pace(seconds) {
+    if (!Number.isFinite(seconds) || seconds <= 0) return '—';
+    const rounded = Math.round(seconds);
+    return Math.floor(rounded / 60) + ':' + String(rounded % 60).padStart(2,'0');
+  }
+  function number(value, decimals) {
+    return Number(value.toFixed(decimals)).toString();
+  }
+  function currentDistance() {
+    return state.distanceKm / (state.unit === 'mi' ? MILE_KM : 1);
+  }
+  function currentPace() {
+    return state.paceSecondsKm * (state.unit === 'mi' ? MILE_KM : 1);
+  }
+  function formatted(key) {
+    if (key === 'distance') return number(currentDistance(), 4);
+    if (key === 'pace') return pace(currentPace());
+    return duration(state.timeSeconds);
+  }
+  function read(key) {
+    if (key === 'distance') {
+      const value = Number($(key).value.trim().replace(',', '.'));
+      return value > 0 && Number.isFinite(value) ? value * (state.unit === 'mi' ? MILE_KM : 1) : NaN;
+    }
+    if (key === 'pace') {
+      const value = paceSeconds($(key).value);
+      return value > 0 ? value / (state.unit === 'mi' ? MILE_KM : 1) : NaN;
+    }
+    return timeSeconds($(key).value);
+  }
+  function setField(key, value) {
+    if (key === 'distance') state.distanceKm = value;
+    else if (key === 'pace') state.paceSecondsKm = value;
+    else state.timeSeconds = value;
+  }
+  function save() {
+    try { sessionStorage.setItem(STORAGE, JSON.stringify(state)); } catch (_) {}
+  }
+  function compute() {
+    const sources = fieldIds.filter(key => key !== state.solve);
+    const first = read(sources[0]);
+    const second = read(sources[1]);
+    if (!(first > 0) || !(second > 0) || !Number.isFinite(first) || !Number.isFinite(second)) {
+      $('resultValue').textContent = '—';
+      $('resultNote').textContent = 'Enter two positive values to calculate.';
+      $('status').className = 'status error';
+      $('status').textContent = 'Check the input format. Pace: 5:30 · Time: 1:45:00 or 55:00';
+      $(state.solve).value = '';
+      return;
+    }
+    setField(sources[0], first);
+    setField(sources[1], second);
+    if (state.solve === 'time') state.timeSeconds = state.distanceKm * state.paceSecondsKm;
+    else if (state.solve === 'pace') state.paceSecondsKm = state.timeSeconds / state.distanceKm;
+    else state.distanceKm = state.timeSeconds / state.paceSecondsKm;
+    if (![state.distanceKm,state.paceSecondsKm,state.timeSeconds].every(n => n > 0 && Number.isFinite(n))) {
+      $('resultValue').textContent = '—';
+      $('status').className = 'status error';
+      $('status').textContent = 'These values are outside the supported range.';
+      return;
+    }
+    $(state.solve).value = formatted(state.solve);
+    renderResult();
+    save();
+  }
+  function renderResult() {
+    const unit = state.unit;
+    const distance = formatted('distance');
+    const p = formatted('pace');
+    const time = formatted('time');
+    $('resultLabel').textContent = modes[state.solve];
+    $('resultValue').textContent = formatted(state.solve);
+    $('resultUnit').textContent = state.solve === 'pace' ? 'min / ' + unit : (state.solve === 'distance' ? unit : 'hours : minutes : seconds');
+    $('resultNote').textContent = state.solve === 'time' ? distance + ' ' + unit + ' at ' + p + '/' + unit :
+      (state.solve === 'pace' ? distance + ' ' + unit + ' in ' + time : time + ' at ' + p + '/' + unit);
+    $('metricDistance').textContent = distance;
+    $('metricDistanceLabel').textContent = 'Distance · ' + unit;
+    $('metricPace').textContent = p;
+    $('metricPaceLabel').textContent = 'Pace · /' + unit;
+    $('metricTime').textContent = time;
+    $('status').className = 'status';
+    $('status').textContent = '';
+  }
+  function renderInputs() {
+    fieldIds.forEach(key => {
+      $(key).disabled = key === state.solve;
+      $(key).value = formatted(key);
+    });
+    document.querySelectorAll('[data-solve]').forEach(btn => btn.setAttribute('aria-pressed', String(btn.dataset.solve === state.solve)));
+    document.querySelectorAll('[data-unit]').forEach(btn => btn.setAttribute('aria-pressed', String(btn.dataset.unit === state.unit)));
+    $('distanceUnit').textContent = state.unit;
+    $('paceUnit').textContent = '/' + state.unit;
+    $('presets').hidden = state.solve === 'distance';
+    document.querySelectorAll('[data-km]').forEach(btn => btn.setAttribute('aria-pressed', String(Math.abs(Number(btn.dataset.km) - state.distanceKm) < .000001)));
+    renderResult();
+    save();
+  }
+  function restore() {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(STORAGE) || 'null');
+      if (!saved || typeof saved !== 'object') return;
+      if (Object.hasOwn ? Object.hasOwn(saved,'solve') : Object.prototype.hasOwnProperty.call(saved,'solve')) {
+        if (modes[saved.solve]) state.solve = saved.solve;
+      }
+      if (saved.unit === 'km' || saved.unit === 'mi') state.unit = saved.unit;
+      for (const key of ['distanceKm','paceSecondsKm','timeSeconds']) {
+        const value = Number(saved[key]);
+        if (Number.isFinite(value) && value > 0) state[key] = value;
+      }
+      // Restore a mathematically consistent result even after interrupted input.
+      if (state.solve === 'time') state.timeSeconds = state.distanceKm * state.paceSecondsKm;
+      if (state.solve === 'pace') state.paceSecondsKm = state.timeSeconds / state.distanceKm;
+      if (state.solve === 'distance') state.distanceKm = state.timeSeconds / state.paceSecondsKm;
+    } catch (_) {}
+  }
+
+  fieldIds.forEach(key => {
+    $(key).addEventListener('input', compute);
+    $(key).addEventListener('blur', () => {
+      if (key !== state.solve && read(key) > 0 && Number.isFinite(read(key))) {
+        compute();
+        $(key).value = formatted(key);
+      }
+    });
+  });
+  document.querySelectorAll('[data-solve]').forEach(btn => btn.addEventListener('click', () => {
+    if (state.solve !== btn.dataset.solve) {
+      state.solve = btn.dataset.solve;
+      renderInputs();
+    }
+  }));
+  document.querySelectorAll('[data-unit]').forEach(btn => btn.addEventListener('click', () => {
+    if (state.unit !== btn.dataset.unit) {
+      state.unit = btn.dataset.unit;
+      renderInputs();
+    }
+  }));
+  document.querySelectorAll('[data-km]').forEach(btn => btn.addEventListener('click', () => {
+    state.distanceKm = Number(btn.dataset.km);
+    renderInputs();
+  }));
+  restore();
+  renderInputs();
+})();
+</script>
+<script src="../tools-menu.js"></script>
+</body>
+</html>
